@@ -1,5 +1,6 @@
 import {MigrationInterface, QueryRunner} from "typeorm";
 
+// CREATE DATABASE dagaz CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
 // typeorm migration:create -n init
 // npm install -g ts-node
 // ts-node ./node_modules/typeorm/cli.js migration:run
