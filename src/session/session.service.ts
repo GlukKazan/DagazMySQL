@@ -26,7 +26,7 @@ export class SessionService {
         const x = await this.service.query(
           `select realm_id
            from   users
-           where  id = $1`, [user]);
+           where  id = ?`, [user]);
         if (!x || x.length != 1) {
             return null;
         }
@@ -40,7 +40,7 @@ export class SessionService {
                         a.move_str as move_str
                  from   game_moves a
                  inner  join user_games b on (b.id = a.uid)
-                 where  a.session_id = $1
+                 where  a.session_id = ?
                  order  by a.turn_num`, [sid]);
             if (!x || x.length == 0) {
                  return null;
@@ -66,14 +66,16 @@ export class SessionService {
         try {
             const x = await this.service.query(
                 `select distinct a.id as id, a.status_id as status, a.game_id as game_id, d.id as variant_id,
-                        coalesce(d.name, b.name) || ' (' || a.id || ')' as game, coalesce(d.filename, b.filename) || coalesce(h.suffix, '') as filename, 
+                        concat(coalesce(d.name, b.name), ' (' , a.id , ')') as game, 
+                        concat(coalesce(d.filename, b.filename) , coalesce(h.suffix, '')) as filename, 
                         a.created as created, c.name as creator, b.players_total as players_total, a.last_setup as last_setup, 
-                        string_agg(
-                            case
+                        GROUP_CONCAT(
+                            concat(case
                               when e.is_ai = 1 then 'AI'
                               else f.name
-                            end || ' (' || e.player_num || 
-                        ')', ' / ' order by e.player_num) as player_name,
+                            end, ' (' , e.player_num , ')')
+                            ORDER BY e.player_num
+                            SEPARATOR ' / ') as player_name,
                         coalesce(a.last_turn, 0) as last_turn, coalesce(a.selector_value, 0) as selector_value, x.id as ai
                  from   game_sessions a
                  inner  join games b on (b.id = a.game_id)
@@ -82,11 +84,11 @@ export class SessionService {
                  inner  join user_games e on (e.session_id = a.id)
                  inner  join users f on (f.id = e.user_id)
                  left   join user_games x on (x.session_id = a.id and x.is_ai = 1)
-                 inner  join tournament_games i on (i.session_id = a.id and i.tournament_id = $1)
-                 left   join user_games j on (j.session_id = a.id and j.user_id = $2)
+                 inner  join tournament_games i on (i.session_id = a.id and i.tournament_id = ?)
+                 left   join user_games j on (j.session_id = a.id and j.user_id = ?)
                  left   join game_styles h on (h.game_id = b.id and h.player_num = j.player_num)
-                 left   join user_games k on (k.session_id = a.id and k.user_id = $3)
-                 where  coalesce(k.user_id, 0) = $4
+                 left   join user_games k on (k.session_id = a.id and k.user_id = ?)
+                 where  coalesce(k.user_id, 0) = ?
                  group  by a.id, a.status_id, a.game_id, d.id, d.name, b.name, d.filename, b.filename, a.created, c.name, b.players_total, a.last_setup, x.id, h.suffix`, [tourn, auth, user, user]);
                  let l: Sess[] = x.map(x => {
                     let it = new Sess();
@@ -120,49 +122,55 @@ export class SessionService {
             const realm = await this.getRealm(user);
             const x = await this.service.query(
                 `select a.id as id, a.status_id as status, a.game_id as game_id, d.id as variant_id,
-                        coalesce(d.name, b.name) || ' (' || a.id || ')' as game, coalesce(d.filename, b.filename) || coalesce(h.suffix, '') as filename, 
+                        concat(coalesce(d.name, b.name), ' (', a.id, ')') as game, 
+                        concat(coalesce(d.filename, b.filename), coalesce(h.suffix, '')) as filename, 
                         a.created as created, c.name as creator, b.players_total as players_total, a.last_setup as last_setup,
-                        string_agg(
-                            case
+                        GROUP_CONCAT(
+                            concat(case
                               when e.is_ai = 1 then 'AI'
                               else f.name
-                            end || ' (' || e.player_num || ')', ' / ' order by e.player_num) as player_name,
+                            end, ' (', e.player_num, ')')
+                            ORDER BY e.player_num
+                            SEPARATOR ' / ') as player_name,
                         coalesce(a.last_turn, 0) as last_turn, coalesce(a.selector_value, 0) as selector_value, x.id as ai, a.changed as changed,
                         a.timecontrol_id, t.name as timecontrol
                  from   game_sessions a
                  inner  join games b on (b.id = a.game_id)
-                 inner  join users c on (c.id = a.user_id and c.realm_id = $1)
+                 inner  join users c on (c.id = a.user_id and c.realm_id = ?)
                  left   join game_variants d on (d.id = a.variant_id)
                  inner  join user_games e on (e.session_id = a.id)
-                 inner  join users f on (f.id = e.user_id and f.realm_id = $2)
-                 left   join user_games g on (g.session_id = a.id and g.user_id = $3 and g.is_ai = 0)
+                 inner  join users f on (f.id = e.user_id and f.realm_id = ?)
+                 left   join user_games g on (g.session_id = a.id and g.user_id = ? and g.is_ai = 0)
                  left   join game_styles h on (h.game_id = b.id and h.player_num = g.player_num)
-                 inner  join user_games i on (i.session_id = a.id and i.player_num = a.next_player and i.user_id = $4)
+                 inner  join user_games i on (i.session_id = a.id and i.player_num = a.next_player and i.user_id = ?)
                  left   join user_games x on (x.session_id = a.id and x.is_ai = 1)
                  left   join time_controls t on (t.id = a.timecontrol_id)
                  where  a.status_id = 2 and a.closed is null
                  group  by a.id, a.status_id, a.game_id, d.id, d.name, b.name, d.filename, b.filename, a.created, c.name, b.players_total, a.last_setup, h.suffix, x.id, a.timecontrol_id, t.name
                  union  all
                  select a.id as id, a.status_id as status, a.game_id as game_id, d.id as variant_id,
-                        coalesce(d.name, e.name) || ' (' || a.id || ')' as game, coalesce(d.filename, e.filename) || coalesce(h.suffix, '') as filename,
+                        concat(coalesce(d.name, e.name), ' (', a.id, ')') as game, 
+                        concat(coalesce(d.filename, e.filename), coalesce(h.suffix, '')) as filename,
                         a.created as created, j.name as creator, e.players_total as players_total, a.last_setup as last_setup,
-                        string_agg(
-                            case
+                        GROUP_CONCAT(
+                            concat(case
                               when k.is_ai = 1 then 'AI'
                               else f.name
-                            end || ' (' || k.player_num || ')', ' / ' order by k.player_num) as player_name,
+                            end, ' (', k.player_num, ')')
+                            ORDER BY k.player_num
+                            SEPARATOR ' / ') as player_name,
                         coalesce(a.last_turn, 0) as last_turn, coalesce(a.selector_value, 0) as selector_value, x.id as ai, a.changed as changed,
                         a.timecontrol_id, t.name as timecontrol
                  from   game_sessions a
-                 inner  join user_games b on (b.session_id = a.id and b.player_num = 1 and b.user_id = $5)
+                 inner  join user_games b on (b.session_id = a.id and b.player_num = 1 and b.user_id = ?)
                  left   join game_moves c on (c.session_id = a.id)
                  left   join game_variants d on (d.id = a.variant_id)
                  inner  join games e on (e.id = a.game_id)
-                 left   join user_games g on (g.session_id = a.id and g.user_id = $6 and g.is_ai = 0)
+                 left   join user_games g on (g.session_id = a.id and g.user_id = ? and g.is_ai = 0)
                  left   join game_styles h on (h.game_id = e.id and h.player_num = g.player_num)
-                 inner  join users j on (j.id = a.user_id and j.realm_id = $7)
+                 inner  join users j on (j.id = a.user_id and j.realm_id = ?)
                  inner  join user_games k on (k.session_id = a.id)
-                 inner  join users f on (f.id = k.user_id and f.realm_id = $8)
+                 inner  join users f on (f.id = k.user_id and f.realm_id = ?)
                  left   join user_games x on (x.session_id = a.id and x.is_ai = 1)
                  left   join time_controls t on (t.id = a.timecontrol_id)
                  where  c.id is null and a.closed is null
@@ -202,28 +210,30 @@ export class SessionService {
             const realm = await this.getRealm(user);
             const x = await this.service.query(
                 `select a.id as id, a.status_id as status, a.game_id as game_id, d.id as variant_id,
-                        coalesce(d.name, b.name) || ' (' || a.id || ')' as game, coalesce(d.filename, b.filename) || coalesce(h.suffix, '') as filename, 
+                        concat(coalesce(d.name, b.name), ' (', a.id, ')') as game, 
+                        concat(coalesce(d.filename, b.filename), coalesce(h.suffix, '')) as filename, 
                         a.created as created, c.name as creator, b.players_total as players_total, a.last_setup as last_setup,
-                        string_agg(
-                            case
+                        GROUP_CONCAT(
+                            concat(case
                               when e.is_ai = 1 then 'AI'
                               else f.name
-                            end || ' (' || e.player_num || 
-                        ')', ' / ' order by e.player_num) as player_name,
+                            end, ' (', e.player_num, ')')
+                        ORDER BY e.player_num
+                        SEPARATOR ' / ') as player_name,
                         coalesce(a.last_turn, 0) as last_turn, coalesce(a.selector_value, 0) as selector_value, x.id as ai,
                         a.timecontrol_id, t.name as timecontrol
                  from   game_sessions a
-                 inner  join games b on (b.id = a.game_id and coalesce($1, b.id) = b.id)
-                 inner  join users c on (c.id = a.user_id and c.realm_id = $2)
+                 inner  join games b on (b.id = a.game_id and coalesce(?, b.id) = b.id)
+                 inner  join users c on (c.id = a.user_id and c.realm_id = ?)
                  left   join game_variants d on (d.id = a.variant_id)
                  inner  join user_games e on (e.session_id = a.id)
-                 inner  join users f on (f.id = e.user_id and f.realm_id = $3)
-                 left   join user_games g on (g.session_id = a.id and g.user_id = $4 and g.is_ai = 0)
+                 inner  join users f on (f.id = e.user_id and f.realm_id = ?)
+                 left   join user_games g on (g.session_id = a.id and g.user_id = ? and g.is_ai = 0)
                  left   join game_styles h on (h.game_id = b.id and h.player_num = g.player_num)
                  left   join user_games x on (x.session_id = a.id and x.is_ai = 1)
                  left   join time_controls t on (t.id = a.timecontrol_id)
                  where  coalesce(a.last_turn, 0) > 0
-                 and  ( coalesce($5, d.id) = d.id or d.id is null )
+                 and  ( coalesce(?, d.id) = d.id or d.id is null )
                  group  by a.id, a.status_id, a.game_id, d.id, d.name, b.name, d.filename, b.filename, a.created, c.name, b.players_total, a.last_setup, h.suffix, x.id, a.timecontrol_id, t.name
                  order  by a.changed desc`, [game, realm, realm, user, variant]);
                  let l: Sess[] = x.map(x => {
@@ -260,23 +270,23 @@ export class SessionService {
             const realm = await this.getRealm(user);
             const x = await this.service.query(
                 `select a.id as id, a.status_id as status, a.game_id as game_id, d.id as variant_id,
-                        coalesce(d.name, b.name) || ' (' || a.id || ')' as game, coalesce(d.filename, b.filename) as filename, 
+                        concat(coalesce(d.name, b.name), ' (', a.id, ')') as game, coalesce(d.filename, b.filename) as filename, 
                         a.created as created, c.name  || ' (' || e.player_num || ')' as creator, b.players_total as players_total,
                         a.last_setup as last_setup, e.player_num as player_num, coalesce(a.selector_value, 0) as selector_value,
                         a.timecontrol_id, g.name as timecontrol
                  from   game_sessions a
-                 inner  join games b on (b.id = a.game_id and coalesce($1, b.id) = b.id)
-                 inner  join users c on (c.id = a.user_id and c.realm_id = $2)
+                 inner  join games b on (b.id = a.game_id and coalesce(?, b.id) = b.id)
+                 inner  join users c on (c.id = a.user_id and c.realm_id = ?)
                  left   join game_variants d on (d.id = a.variant_id)
-                 inner  join user_games e on (e.session_id = a.id and e.user_id <> $3)
+                 inner  join user_games e on (e.session_id = a.id and e.user_id <> ?)
                  left   join black_list f on (
-                        f.user_id = a.user_id and f.restricted_id = $4 and
+                        f.user_id = a.user_id and f.restricted_id = ? and
                         coalesce(f.game_id, b.id) = b.id and
                       ( d.id is null or coalesce(f.variant_id, d.id) = d.id)
                  )
                  left   join time_controls g on (g.id = a.timecontrol_id)
                  where  a.status_id = 1 and a.closed is null
-                 and  ( coalesce($5, d.id) = d.id or d.id is null )
+                 and  ( coalesce(?, d.id) = d.id or d.id is null )
                  and    f.id is null
                  order  by a.created desc`, [game, realm, user, user, variant]);
                  let l: Sess[] = x.map(x => {
@@ -312,23 +322,25 @@ export class SessionService {
             const realm = await this.getRealm(user);
             const x = await this.service.query(
                 `select a.id as id, a.status_id as status, a.game_id as game_id, d.id as variant_id,
-                        coalesce(d.name, b.name) || ' (' || a.id || ')' as game, coalesce(d.filename, b.filename) || coalesce(h.suffix, '') as filename, 
+                        concat(coalesce(d.name, b.name), ' (', a.id, ')') as game, 
+                        concat(coalesce(d.filename, b.filename), coalesce(h.suffix, '')) as filename, 
                         a.created as created, c.name as creator, b.players_total as players_total, a.last_setup as last_setup,
-                        string_agg(
-                            case
+                        GROUP_CONCAT(
+                            concat(case
                               when e.is_ai = 1 then 'AI'
                               else f.name
-                            end || ' (' || e.player_num || 
-                        ')', ' / ' order by e.player_num) as player_name,
+                            end, ' (', e.player_num, ')')
+                            ORDER BY e.player_num
+                            SEPARATOR ' / ') as player_name,
                         coalesce(a.last_turn, 0) as last_turn, coalesce(a.selector_value, 0) as selector_value, x.id as ai,
                         a.timecontrol_id, t.name as timecontrol
                  from   game_sessions a
                  inner  join games b on (b.id = a.game_id)
-                 inner  join users c on (c.id = a.user_id and c.realm_id = $1)
+                 inner  join users c on (c.id = a.user_id and c.realm_id = ?)
                  left   join game_variants d on (d.id = a.variant_id)
                  inner  join user_games e on (e.session_id = a.id)
-                 inner  join users f on (f.id = e.user_id and f.realm_id = $2)
-                 left   join user_games g on (g.session_id = a.id and g.user_id = $3 and g.is_ai = 0)
+                 inner  join users f on (f.id = e.user_id and f.realm_id = ?)
+                 left   join user_games g on (g.session_id = a.id and g.user_id = ? and g.is_ai = 0)
                  left   join game_styles h on (h.game_id = b.id and h.player_num = g.player_num)
                  left   join user_games x on (x.session_id = a.id and x.is_ai = 1)
                  left   join time_controls t on (t.id = a.timecontrol_id)
@@ -369,23 +381,25 @@ export class SessionService {
             const realm = await this.getRealm(user);
             const x = await this.service.query(
                 `select a.id as id, a.status_id as status, a.game_id as game_id, d.id as variant_id,
-                        coalesce(d.name, b.name) || ' (' || a.id || ')' as game, coalesce(d.filename, b.filename) || coalesce(h.suffix, '') as filename, 
+                        concat(coalesce(d.name, b.name), ' (', a.id, ')') as game, 
+                        concat(coalesce(d.filename, b.filename), coalesce(h.suffix, '')) as filename, 
                         a.created as created, c.name as creator, b.players_total as players_total, a.last_setup as last_setup,
-                        string_agg(
-                            case
+                        GROUP_CONCAT(
+                            concat(case
                               when e.is_ai = 1 then 'AI'
                               else f.name
-                            end || ' (' || e.player_num || 
-                        ')', ' / ' order by e.player_num) as player_name,
+                            end, ' (', e.player_num, ')')
+                            ORDER BY e.player_num
+                            SEPARATOR ' / ') as player_name,
                         coalesce(a.last_turn, 0) as last_turn, coalesce(a.selector_value, 0) as selector_value, x.id as ai,
                         a.timecontrol_id, t.name as timecontrol
                  from   game_sessions a
                  inner  join games b on (b.id = a.game_id)
-                 inner  join users c on (c.id = a.user_id and c.realm_id = $1)
+                 inner  join users c on (c.id = a.user_id and c.realm_id = ?)
                  left   join game_variants d on (d.id = a.variant_id)
                  inner  join user_games e on (e.session_id = a.id)
-                 inner  join users f on (f.id = e.user_id and f.realm_id = $2)
-                 left   join user_games g on (g.session_id = a.id and g.user_id = $3 and g.is_ai = 0)
+                 inner  join users f on (f.id = e.user_id and f.realm_id = ?)
+                 left   join user_games g on (g.session_id = a.id and g.user_id = ? and g.is_ai = 0)
                  left   join game_styles h on (h.game_id = b.id and h.player_num = g.player_num)
                  left   join user_games x on (x.session_id = a.id and x.is_ai = 1)
                  left   join time_controls t on (t.id = a.timecontrol_id)
@@ -426,23 +440,25 @@ export class SessionService {
             const realm = await this.getRealm(user);
             const x = await this.service.query(
                 `select a.id as id, a.status_id as status, a.game_id as game_id, d.id as variant_id,
-                        coalesce(d.name, b.name) || ' (' || a.id || ')' as game, coalesce(d.filename, b.filename) || coalesce(h.suffix, '') as filename, 
+                        concat(coalesce(d.name, b.name), ' (', a.id, ')') as game, 
+                        concat(coalesce(d.filename, b.filename), coalesce(h.suffix, '')) as filename, 
                         a.created as created, c.name as creator, b.players_total as players_total, a.last_setup as last_setup,
-                        string_agg(
-                            case
+                        GROUP_CONCAT(
+                            concat(case
                               when e.is_ai = 1 then 'AI'
                               else f.name
-                            end || ' (' || e.player_num || 
-                        ')', ' / ' order by e.player_num) as player_name,
+                            end, ' (', e.player_num, ')')
+                            ORDER BY e.player_num
+                            SEPARATOR ' / ') as player_name,
                         coalesce(a.last_turn, 0) as last_turn, coalesce(a.selector_value, 0) as selector_value, x.id as ai,
                         a.timecontrol_id, t.name as timecontrol
                  from   game_sessions a
                  inner  join games b on (b.id = a.game_id)
-                 inner  join users c on (c.id = a.user_id and c.realm_id = $1)
+                 inner  join users c on (c.id = a.user_id and c.realm_id = ?)
                  left   join game_variants d on (d.id = a.variant_id)
                  inner  join user_games e on (e.session_id = a.id)
-                 inner  join users f on (f.id = e.user_id and f.realm_id = $2)
-                 inner  join user_games g on (g.session_id = a.id and g.user_id = $3 and g.is_ai = 0)
+                 inner  join users f on (f.id = e.user_id and f.realm_id = ?)
+                 inner  join user_games g on (g.session_id = a.id and g.user_id = ? and g.is_ai = 0)
                  left   join game_styles h on (h.game_id = b.id and h.player_num = g.player_num)
                  left   join user_games x on (x.session_id = a.id and x.is_ai = 1)
                  left   join time_controls t on (t.id = a.timecontrol_id)
@@ -481,7 +497,7 @@ export class SessionService {
         const x = await this.service.query(
             `select main_time * 1000 as main_time
              from   game_sessions
-             where  id = $1`, [sid]);
+             where  id = ?`, [sid]);
         if (!x || x.length != 1) {
             return null;
         }
@@ -489,22 +505,14 @@ export class SessionService {
     }
 
     async getAvailPlayer(id: number, num: number): Promise<number> {
-        const x = await this.service.query(
-            `select b.players_total as cnt
-             from   game_sessions a
-             inner  join games b on (b.id = a.game_id)
-             where  a.id = $1`, [id]);
-        if (!x || x.length != 1) {
-            return null;
-        }
-        const cnt = x[0].cnt;
         const y = await this.service.query(
             `select a.player_num as player_num
-             from ( select generate_series as player_num 
-                    from   generate_series(1, $1)) a
-             left   join   user_games b on (b.player_num = a.player_num and b.session_id = $2)
+             from ( select 1 as player_num 
+                    union  all
+                    select 2) a
+             left   join   user_games b on (b.player_num = a.player_num and b.session_id = ?)
              where  b.id is null
-             order  by player_num`, [cnt, id]);
+             order  by player_num`, [id]);
         if (!y || y.length == 0) {
              return null;
         }
@@ -555,7 +563,7 @@ export class SessionService {
         const x = await this.service.query(
             `select id
              from   games
-             where  filename = $1 and realm_id = $2`, [filename, realm]);
+             where  filename = ? and realm_id = ?`, [filename, realm]);
         if (!x || x.length != 1) {
              return null;
         }
@@ -569,7 +577,7 @@ export class SessionService {
              inner  join game_sessions b on (b.game_id = a.id and b.closed is null and b.status_id = 1)
              inner  join user_games c on (c.session_id = b.id)
              inner  join users d on (d.id = c.user_id and d.is_anonymous = 1)
-             where  a.filename = $1`, [filename]);
+             where  a.filename = ?`, [filename]);
         if (!x || x.length != 1) {
              return null;
         }
@@ -591,7 +599,7 @@ export class SessionService {
         const x = await this.service.query(
             `select player_num
              from   user_games
-             where  id = $1`, [uid]);
+             where  id = ?`, [uid]);
         if (!x || x.length != 1) {
              return null;
         }
@@ -622,7 +630,7 @@ export class SessionService {
                         b.players_total as players_total
                  from   game_sessions a
                  inner  join games b on (b.id = a.game_id)
-                 where  a.id = $1`, [s.id]);
+                 where  a.id = ?`, [s.id]);
             if (!x || x.length != 1) {
                 return null;
             }
@@ -725,143 +733,11 @@ export class SessionService {
         }
     }
 
-    async clearWaiting(): Promise<boolean> {
-        const dt = new Date();
-        await this.service.createQueryBuilder("tournament_games")
-        .update(tournament_games)
-        .set({ 
-            session_id: null
-         })
-        .where(`session_id in (select id
-            from   game_sessions
-            where  status_id = 1 and is_protected = 0
-            and    created + interval '1 week' < :dt)`, {dt: dt})
-        .execute();
-        await this.service.createQueryBuilder("game_alerts")
-        .delete()
-        .from(game_alerts)
-        .where(`session_id in (select id
-                               from   game_sessions
-                               where  status_id = 1 and is_protected = 0
-                               and    created + interval '1 week' < :dt)`, {dt: dt})
-        .execute();
-        await this.service.createQueryBuilder("game_moves")
-        .delete()
-        .from(game_moves)
-        .where(`session_id in (select id
-                               from   game_sessions
-                               where  status_id = 1 and is_protected = 0
-                               and    created + interval '1 week' < :dt)`, {dt: dt})
-        .execute();
-        await this.service.createQueryBuilder("challenge")
-        .delete()
-        .from(challenge)
-        .where(`session_id in (select id
-                               from   game_sessions
-                               where  status_id = 1 and is_protected = 0
-                               and    created + interval '1 week' < :dt)`, {dt: dt})
-        .execute();
-        await this.service.createQueryBuilder("user_games")
-        .delete()
-        .from(user_games)
-        .where(`session_id in (select id
-                               from   game_sessions
-                               where  status_id = 1 and is_protected = 0
-                               and    created + interval '1 week' < :dt)`, {dt: dt})
-        .execute();
-        await this.service.createQueryBuilder("game_sessions")
-        .delete()
-        .from(game_sessions)
-        .where("status_id = 1 and is_protected = 0 and created + interval '1 week' < :dt", {dt: dt})
-        .execute();
-        return true;
-    }
-
-    async clearObsolete(): Promise<boolean> {
-        const dt = new Date();
-        await this.service.createQueryBuilder("tournament_games")
-        .update(tournament_games)
-        .set({ 
-            session_id: null
-         })
-        .where(`session_id in (select id
-            from   game_sessions
-            where  status_id = 1 and is_protected = 0
-            and    created + interval '1 week' < :dt)`, {dt: dt})
-        .execute();
-        await this.service.createQueryBuilder("game_alerts")
-        .delete()
-        .from(game_alerts)
-        .where(`session_id in (select a.id
-                               from   game_sessions a
-                               where  a.status_id = 1 and a.is_protected = 0
-                               and    a.changed + interval '1 month' < :dt
-                               except
-                               select c.id
-                               from   bonuses a
-                               inner  join user_games b on (b.id = a.uid)
-                               inner  join game_sessions c on (c.id = b.session_id))`, {dt: dt})
-        .execute();
-        await this.service.createQueryBuilder("game_moves")
-        .delete()
-        .from(game_moves)
-        .where(`session_id in (select a.id
-                               from   game_sessions a
-                               where  a.status_id = 1 and a.is_protected = 0
-                               and    a.changed + interval '1 month' < :dt
-                               except
-                               select c.id
-                               from   bonuses a
-                               inner  join user_games b on (b.id = a.uid)
-                               inner  join game_sessions c on (c.id = b.session_id))`, {dt: dt})
-        .execute();
-        await this.service.createQueryBuilder("challenge")
-        .delete()
-        .from(challenge)
-        .where(`session_id in (select a.id
-                               from   game_sessions a
-                               where  a.status_id = 1 and a.is_protected = 0
-                               and    a.changed + interval '1 month' < :dt
-                               except
-                               select c.id
-                               from   bonuses a
-                               inner  join user_games b on (b.id = a.uid)
-                               inner  join game_sessions c on (c.id = b.session_id))`, {dt: dt})
-        .execute();
-        await this.service.createQueryBuilder("user_games")
-        .delete()
-        .from(user_games)
-        .where(`session_id in (select a.id
-                               from   game_sessions a
-                               where  a.status_id = 1 and a.is_protected = 0
-                               and    a.changed + interval '1 month' < :dt
-                               except
-                               select c.id
-                               from   bonuses a
-                               inner  join user_games b on (b.id = a.uid)
-                               inner  join game_sessions c on (c.id = b.session_id))`, {dt: dt})
-        .execute();
-        await this.service.createQueryBuilder("game_sessions")
-        .delete()
-        .from(game_sessions)
-        .where(`id in (select a.id
-                       from   game_sessions a
-                       where  a.status_id = 1 and a.is_protected = 0
-                       and    a.changed + interval '1 month' < :dt
-                       except
-                       select c.id
-                       from   bonuses a
-                       inner  join user_games b on (b.id = a.uid)
-                       inner  join game_sessions c on (c.id = b.session_id))`, {dt: dt})
-        .execute();
-        return true;
-    }
-
     async getLastId(sid: number, uid: number): Promise<number> {
         let x = await this.service.query(
             `select max(id) as last_id
              from   game_moves
-             where  session_id = $1 and uid = $2`, [sid, uid]);
+             where  session_id = ? and uid = ?`, [sid, uid]);
         if (!x || x.length == 0) {
              return null;
         }
@@ -874,7 +750,7 @@ export class SessionService {
             let x = await this.service.query(
                 `select setup_str, turn_num
                  from   game_moves
-                 where  id = $1`, [last_id]);
+                 where  id = ?`, [last_id]);
             if (!x || x.length == 0) {
                  return null;
             }
@@ -912,7 +788,7 @@ export class SessionService {
                     b.user_id = e.user_id and
                     b.external_ai = f.user_id
              )
-             where  a.id = $1`, [sid]);
+             where  a.id = ?`, [sid]);
         if (!x || x.length == 0) {
              return 1000;
         }
@@ -934,7 +810,7 @@ export class SessionService {
             `select a.time_limit, b.last_time
              from   user_games a
              inner  join game_sessions b on (b.id = a.session_id)
-             where  a.id = $1`, [uid]);
+             where  a.id = ?`, [uid]);
         if (!x || x.length == 0) {
              return null;
         }
@@ -952,7 +828,7 @@ export class SessionService {
         let x = await this.service.query(
             `select additional_time
              from   game_sessions
-             where  id = $1`, [sid]);
+             where  id = ?`, [sid]);
         if (!x || x.length == 0) {
              return null;
         }
@@ -975,7 +851,7 @@ export class SessionService {
                  inner  join games c on (c.id = a.game_id)
                  left   join game_alerts e on (e.session_id = a.id)
                  left   join game_variants v on (v.id = a.variant_id)
-                 where  a.id = $1`, [s.id]);
+                 where  a.id = ?`, [s.id]);
             if (!x || x.length == 0) {
                  return null;
             }
@@ -1042,7 +918,7 @@ export class SessionService {
         let x = await this.service.query(
             `select a.suffix as suffix
              from   game_styles a
-             where  a.game_id = $1 and a.player_num = $2`, [game, player_num]);
+             where  a.game_id = ? and a.player_num = ?`, [game, player_num]);
         if (!x || x.length == 0) {
              return "";
         }
@@ -1053,9 +929,9 @@ export class SessionService {
         let x = await this.service.query(
             `select count(*) as cnt
              from   game_bots
-             where  game_id = $1 and coalesce(variant_id, $2) = $3
-             and    coalesce(selector_value, $4) = $5
-             and    coalesce(player_num, $6) = $7`, [game_id, variant_id, variant_id, selector_value, selector_value, player_num, player_num]);
+             where  game_id = ? and coalesce(variant_id, ?) = ?
+             and    coalesce(selector_value, ?) = ?
+             and    coalesce(player_num, ?) = ?`, [game_id, variant_id, variant_id, selector_value, selector_value, player_num, player_num]);
         if (!x || x.length == 0) {
              return false;
         }
@@ -1067,7 +943,7 @@ export class SessionService {
             let x = await this.service.query(
                 `select a.external_ai
                  from   game_variants a
-                 where  a.id = $1`, [variant_id]);
+                 where  a.id = ?`, [variant_id]);
             if (x && x.length > 0) {
                 return x[0].external_ai;
             }
@@ -1075,7 +951,7 @@ export class SessionService {
         let x = await this.service.query(
             `select a.external_ai
              from   games a
-             where  a.id = $1`, [game_id]);
+             where  a.id = ?`, [game_id]);
         if (x && x.length > 0) {
              return x[0].external_ai;
         }
@@ -1086,11 +962,11 @@ export class SessionService {
         let x = await this.service.query(
             `select a.id
              from   game_sessions a
-             inner  join user_games b on (b.session_id = a.id and b.user_id <> $1 and b.is_ai = 0 and b.player_num <> coalesce($2, b.player_num + 1))
+             inner  join user_games b on (b.session_id = a.id and b.user_id <> ? and b.is_ai = 0 and b.player_num <> coalesce(?, b.player_num + 1))
              left   join game_variants c on (c.external_ai = b.user_id)
              left   join games d on (d.external_ai = b.user_id)
-             where  a.status_id = 1 and a.game_id = $3 and coalesce(a.variant_id, 0) = coalesce($4, 0)
-             and    coalesce(a.selector_value, 0) = coalesce($5, 0) and c.id is null and d.id is null`, 
+             where  a.status_id = 1 and a.game_id = ? and coalesce(a.variant_id, 0) = coalesce(?, 0)
+             and    coalesce(a.selector_value, 0) = coalesce(?, 0) and c.id is null and d.id is null`, 
              [user, sess.player_num, sess.game_id, sess.variant_id, sess.selector_value]);
         if (!x || x.length == 0) {
             return null;
@@ -1104,7 +980,7 @@ export class SessionService {
         const x = await this.service.query(
             `select id, name, main_time, additional_time, is_sandglass
              from   time_controls
-             where  id = $1`, [id]);
+             where  id = ?`, [id]);
         if (!x || x.length == 0) {
              return null;
         }
@@ -1126,8 +1002,6 @@ export class SessionService {
                 }
             }
             const suffix = await this.getSuffix(x.game_id, x.player_num);
-            await this.clearWaiting();
-            await this.clearObsolete();
             let t: GameTime = null;
             if (x.timecontrol_id) {
                 t = await this.getTimeControl(x.timecontrol_id);
@@ -1179,16 +1053,16 @@ export class SessionService {
         const x = await this.service.query(
             `select id
              from   users
-             where  id = $1 and is_admin = 1`, [user]);
+             where  id = ? and is_admin = 1`, [user]);
         if (x && x.length > 0) {
              return true;
         }
         const y = await this.service.query(
             `select b.id
              from   game_sessions a
-             inner  join user_games b on (b.session_id = a.id and b.user_id = $1)
+             inner  join user_games b on (b.session_id = a.id and b.user_id = ?)
              inner  join users c on (c.id = b.user_id and c.is_anonymous = 1)
-             where  a.id = $2`, [user, sess]);
+             where  a.id = ?`, [user, sess]);
         if (y && y.length > 0) {
              return true;
         }
@@ -1200,7 +1074,7 @@ export class SessionService {
             `select a.session_id
              from   user_games a
              inner  join game_sessions b on (b.id = a.session_id and b.closed is null)
-             where  a.id = $1`, [uid]);
+             where  a.id = ?`, [uid]);
         if (!x || x.length != 1) {
              return null;
         }
@@ -1217,7 +1091,7 @@ export class SessionService {
              left   join game_variants c on (c.id = a.variant_id)
              inner  join user_games d on (d.session_id = a.id and d.user_id = coalesce(c.external_ai, b.external_ai))
              inner  join user_games e on (e.session_id = a.id and e.user_id <> coalesce(c.external_ai, b.external_ai))
-             where  a.id = $1`, [sid]);
+             where  a.id = ?`, [sid]);
         if (!x || x.length == 0) {
              return false;
         }
@@ -1237,9 +1111,9 @@ export class SessionService {
                     d.game_id = b.id and
                     coalesce(d.variant_id, 0) = coalesce(c.id, 0) and
                     coalesce(d.selector_value, 0) = coalesce(a.selector_value, 0) and
-                    d.external_ai = $1 and d.user_id = $2
+                    d.external_ai = ? and d.user_id = ?
              )
-             where  a.id = $3`, [x[0].ai, x[0].user, sid]);
+             where  a.id = ?`, [x[0].ai, x[0].user, sid]);
         if (!y || y.length == 0) {
             this.service.createQueryBuilder("ai_settings")
             .insert()
@@ -1285,7 +1159,7 @@ export class SessionService {
              left   join game_scores c on (c.game_id = b.game_id and (b.variant_id is null or coalesce(c.variant_id, b.variant_id) = b.variant_id) and c.result_id = 1)
              left   join game_scores d on (d.game_id = b.game_id and (b.variant_id is null or coalesce(d.variant_id, b.variant_id) = b.variant_id) and d.result_id = 2)
              left   join game_scores e on (e.game_id = b.game_id and (b.variant_id is null or coalesce(e.variant_id, b.variant_id) = b.variant_id) and e.result_id = 3)
-             where  a.session_id = $1`, [sess]);
+             where  a.session_id = ?`, [sess]);
         if (!x || x.length == 0) return null;
         let r = new Tourn();
         r.id = x[0].id;
@@ -1304,7 +1178,7 @@ export class SessionService {
              from   tournament_games a
              inner  join tournament_users b on (b.id = a.player_a)
              inner  join user_games c on (c.session_id = a.session_id and c.user_id = b.user_id)
-             where  a.session_id = $1`, [sess]);
+             where  a.session_id = ?`, [sess]);
         if (!x || x.length == 0) return null;
         return x[0].result_id;
     }
@@ -1313,7 +1187,7 @@ export class SessionService {
         const x = await this.service.query(
             `select score, total, win, lose
              from   tournament_users
-             where  id = $1`, [id]);
+             where  id = ?`, [id]);
         if (!x || x.length == 0) return;
         await this.service.createQueryBuilder("tournament_users")
         .update(tournament_users)
@@ -1335,7 +1209,7 @@ export class SessionService {
              left   join user_ratings c on (
                     c.user_id = a.user_id and c.type_id = b.ratingtype_id and
                     c.game_id = b.game_id and coalesce(c.variant_id, 0) = coalesce(b.variant_id, 0) )
-             where  a.id = $1`, [id]);
+             where  a.id = ?`, [id]);
         if (!x || x.length == 0) return null;
         return {
             id: x[0].id,

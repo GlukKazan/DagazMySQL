@@ -20,7 +20,7 @@ export class RatingService {
                  inner  join games b on (b.id = a.game_id)
                  left   join game_variants c on (c.id = a.variant_id)
                  inner  join users d on (d.id = user_id)
-                 where  a.user_id = $1
+                 where  a.user_id = ?
                  order  by a.rating desc`, [user]);
                  let l: Rate[] = x.map(x => {
                     let it = new Rate();
@@ -52,7 +52,7 @@ export class RatingService {
              inner  join games b on (b.id = a.game_id)
              left   join game_variants c on (c.id = a.variant_id)
              inner  join users d on (d.id = user_id)
-             where  a.game_id = $1 and a.variant_id = $2
+             where  a.game_id = ? and a.variant_id = ?
              order  by a.rating desc`, [game, variant]);
              let l: Rate[] = x.map(x => {
                 let it = new Rate();

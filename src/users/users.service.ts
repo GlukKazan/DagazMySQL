@@ -3,8 +3,6 @@ import { getRepository, Repository } from 'typeorm';
 import { users } from '../entity/users';
 import { User } from '../interfaces/user.interface';
 import { tokens } from '../entity/tokens';
-import { realms } from '../entity/realms';
-import { Token } from '../interfaces/token.interface';
 
 @Injectable()
 export class UsersService {
@@ -20,7 +18,7 @@ export class UsersService {
       const x = await this.service.query(
         `select value_str
          from   tokens
-         where  user_id = $1 and type_id = $2
+         where  user_id = ? and type_id = ?
          and    now() < expired`, [id, type]);
       if (!x || x.length != 1) {
           return null;
@@ -32,7 +30,7 @@ export class UsersService {
       const x = await this.service.query(
         `select realm_id
          from   users
-         where  id = $1`, [user]);
+         where  id = ?`, [user]);
       if (!x || x.length != 1) {
           return null;
       }
@@ -40,13 +38,14 @@ export class UsersService {
     }
 
     async checkToken(user: number, val: string): Promise<tokens> {
-      const x = await this.tokens.createQueryBuilder("tokens")
-      .where("tokens.user_id = :user_id and value_str = :val", { user_id: user, val: val })
-      .getOne();
-      if (!x) {
-        return null;
+      const x = await this.service.query(
+        `select *
+         from   tokens
+         where  user_id = ? and value_str = ?`, [user, val]);
+      if (!x || x.length != 1) {
+          return null;
       }
-      return x;
+      return x[0];
     }
 
     async createUser(username: string, realm: number): Promise<User> {
@@ -133,8 +132,8 @@ export class UsersService {
                   b.login as username, a.device_str as device
            from   tokens a
            inner  join users b on (b.id = a.user_id)
-           where  a.value_str = $1`, [token]);
-           if (!x || x.length == 0) {
+           where  a.value_str = ?`, [token]);
+        if (!x || x.length == 0) {
                 return null;
         }
         let it = new User();
@@ -178,7 +177,6 @@ export class UsersService {
 
       async findOneByLogin(name: string): Promise<User> {
         try {
-          // TODO: Check Activated EMail
           const x = await this.service.createQueryBuilder("users")
           .where("users.login = :name", {name: name})
           .getOne();

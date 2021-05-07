@@ -20,7 +20,7 @@ export class JoinService {
              from   game_sessions a
              inner  join user_games b on (b.session_id = a.id)
              inner  join games c on (c.id = a.game_id)
-             where  a.id = $1
+             where  a.id = ?
              group  by c.players_total`, [id]);
         if (!x || x.length != 1) {
             return false;
@@ -37,21 +37,13 @@ export class JoinService {
     }
 
     async getAvailPlayer(id: number): Promise<number> {
-        const x = await this.service.query(
-            `select b.players_total as cnt
-             from   game_sessions a
-             inner  join games b on (b.id = a.game_id)
-             where  a.id = $1`, [id]);
-        if (!x || x.length != 1) {
-            return null;
-        }
-        const cnt = x[0].cnt;
         const y = await this.service.query(
             `select min(a.player_num) as player_num
-             from ( select generate_series as player_num 
-                    from   generate_series(1, $1)) a
-             left   join   user_games b on (b.player_num = a.player_num and b.session_id = $2)
-             where  b.player_num is null`, [cnt, id]);
+             from ( select 1 as player_num 
+                    union  all
+                    select 2 ) a
+             left   join   user_games b on (b.player_num = a.player_num and b.session_id = ?)
+             where  b.player_num is null`, [id]);
         if (!y || y.length != 1) {
              return null;
         }
@@ -62,7 +54,7 @@ export class JoinService {
         const x = await this.service.query(
             `select main_time * 1000 as main_time
              from   game_sessions
-             where  id = $1`, [sid]);
+             where  id = ?`, [sid]);
         if (!x || x.length != 1) {
             return null;
         }
@@ -71,12 +63,12 @@ export class JoinService {
 
     async getFilename(sess: number, player_num: number): Promise<string> {
         const x = await this.service.query(
-            `select coalesce(c.filename, b.filename) || coalesce(d.suffix, '') as filename
+            `select concat(coalesce(c.filename, b.filename), coalesce(d.suffix, '')) as filename
              from   game_sessions a
              inner  join games b on (b.id = a.game_id)
              left   join game_variants c on (c.id = a.variant_id)
-             left   join game_styles d on (d.game_id = a.game_id and d.player_num = $1)
-             where  a.id = $2`, [player_num, sess]);
+             left   join game_styles d on (d.game_id = a.game_id and d.player_num = ?)
+             where  a.id = ?`, [player_num, sess]);
         if (!x || x.length != 1) {
              return "";
         }

@@ -23,7 +23,7 @@ export class TournamentService {
         const x = await this.service.query(
             `select is_admin
              from   users
-             where  id = $1`, [user]);
+             where  id = ?`, [user]);
         if (!x || x.length != 1) {
              return false;
         }
@@ -34,7 +34,7 @@ export class TournamentService {
         const x = await this.service.query(
             `select count(*) as cnt
              from   tournament_users
-             where  tournament_id = $1 and user_id = $2`, [id, user]);
+             where  tournament_id = ? and user_id = ?`, [id, user]);
         if (!x || x.length != 1) {
              return false;
         }
@@ -75,7 +75,7 @@ export class TournamentService {
                 `select id, name, main_time, additional_time, order_num, is_sandglass
                  from   time_controls
                  union  all
-                 select 0 as id, 'No', null::integer, null::integer, 0, false
+                 select 0 as id, 'No', null, null, 0, false
                  order  by order_num`);
                  let l: GameTime[] = x.map(x => {
                     let it = new GameTime();
@@ -116,14 +116,14 @@ export class TournamentService {
                  inner  join games b on (b.id = a.game_id)
                  left   join game_variants c on (c.id = a.variant_id)
                  inner  join users d on (d.id = a.user_id)
-                 left   join tournament_users e on (e.tournament_id = a.id and e.user_id = $1)
+                 left   join tournament_users e on (e.tournament_id = a.id and e.user_id = ?)
                  inner  join game_settings f on (
                     f.game_id = a.game_id and 
                     coalesce(f.variant_id, 0) = coalesce(a.variant_id, 0) and
                     coalesce(f.selector_value, 0) = coalesce(a.selector_value, 0)
                  )
                  left   join time_controls g on (g.id = a.timecontrol_id)
-                 where  a.id = $2
+                 where  a.id = ?
                  order  by a.created desc`, [user, id]);
                  if (!x || x.length != 1) {
                     return null;
@@ -178,14 +178,14 @@ export class TournamentService {
                  inner  join games b on (b.id = a.game_id)
                  left   join game_variants c on (c.id = a.variant_id)
                  inner  join users d on (d.id = a.user_id)
-                 left   join tournament_users e on (e.tournament_id = a.id and e.user_id = $1)
+                 left   join tournament_users e on (e.tournament_id = a.id and e.user_id = ?)
                  inner  join game_settings f on (
                         f.game_id = a.game_id and 
                         coalesce(f.variant_id, 0) = coalesce(a.variant_id, 0) and
                         coalesce(f.selector_value, 0) = coalesce(a.selector_value, 0)
                  )
                  left   join time_controls g on (g.id = a.timecontrol_id)
-                 where  b.id = $2 and coalesce(c.id, 0) = $3
+                 where  b.id = ? and coalesce(c.id, 0) = ?
                  order  by a.created desc`, [user, g, v]);
                  let l: Tourn[] = x.map(x => {
                     let it = new Tourn();
@@ -240,15 +240,15 @@ export class TournamentService {
                  inner  join games b on (b.id = a.game_id)
                  left   join game_variants c on (c.id = a.variant_id)
                  inner  join users d on (d.id = a.user_id)
-                 left   join tournament_users e on (e.tournament_id = a.id and e.user_id = $1)
+                 left   join tournament_users e on (e.tournament_id = a.id and e.user_id = ?)
                  inner  join game_settings f on (
                         f.game_id = a.game_id and 
                         coalesce(f.variant_id, 0) = coalesce(a.variant_id, 0) and
                         coalesce(f.selector_value, 0) = coalesce(a.selector_value, 0)
                  )
                  left   join time_controls g on (g.id = a.timecontrol_id)
-                 where  a.closed is null and (a.is_hidden = 0 or a.user_id = $2
-                        or a.id in (select tournament_id from tournament_users where user_id = $3))
+                 where  a.closed is null and (a.is_hidden = 0 or a.user_id = ?
+                        or a.id in (select tournament_id from tournament_users where user_id = ?))
                  order  by a.created desc`, [user, user, user]);
                  let l: Tourn[] = x.map(x => {
                     let it = new Tourn();
@@ -303,15 +303,15 @@ export class TournamentService {
                  inner  join games b on (b.id = a.game_id)
                  left   join game_variants c on (c.id = a.variant_id)
                  inner  join users d on (d.id = a.user_id)
-                 left   join tournament_users e on (e.tournament_id = a.id and e.user_id = $1)
+                 left   join tournament_users e on (e.tournament_id = a.id and e.user_id = ?)
                  inner  join game_settings f on (
                     f.game_id = a.game_id and 
                     coalesce(f.variant_id, 0) = coalesce(a.variant_id, 0) and
                     coalesce(f.selector_value, 0) = coalesce(a.selector_value, 0)
                  )
                  left   join time_controls g on (g.id = a.timecontrol_id)
-                 where  not a.closed is null and (a.is_hidden = 0 or a.user_id = $2
-                        or a.id in (select tournament_id from tournament_users where user_id = $3))
+                 where  not a.closed is null and (a.is_hidden = 0 or a.user_id = ?
+                        or a.id in (select tournament_id from tournament_users where user_id = ?))
                  order  by a.created desc`, [user, user, user]);
                  let l: Tourn[] = x.map(x => {
                     let it = new Tourn();
@@ -402,7 +402,7 @@ export class TournamentService {
                  left   join user_ratings d on (
                         d.user_id = b.id and d.type_id = c.ratingtype_id and
                         d.game_id = c.game_id and coalesce(d.variant_id, 0) = coalesce(c.variant_id, 0) )
-                 where  a.tournament_id = $1
+                 where  a.tournament_id = ?
                  order  by a.score desc, berger desc, rating desc`, [id]);
                  let l: Member[] = x.map(x => {
                     let it = new Member();
@@ -437,7 +437,7 @@ export class TournamentService {
              left   join user_ratings d on (
                     d.user_id = b.id and d.type_id = c.ratingtype_id and
                     d.game_id = c.game_id and coalesce(d.variant_id, 0) = coalesce(c.variant_id, 0) )
-             where  a.tournament_id = $1`, [id]);
+             where  a.tournament_id = ?`, [id]);
              let l: Member[] = x.map(x => {
                 let it = new Member();
                 it.id = x.id;
@@ -460,7 +460,7 @@ export class TournamentService {
              left   join user_ratings d on (
                     d.user_id = b.id and d.type_id = c.ratingtype_id and
                     d.game_id = c.game_id and coalesce(d.variant_id, 0) = coalesce(c.variant_id, 0) )
-             where  a.id = $1`, [id]);
+             where  a.id = ?`, [id]);
         if (x && x.length > 0) {
             r = x[0].rating;
             const t = x[0].ratingtype_id;
@@ -486,7 +486,7 @@ export class TournamentService {
             `select game_id, variant_id, selector_value,
                     tournamenttype_id, ratingtype_id
              from   game_settings
-             where  id = $1`, [t.setting_id]);
+             where  id = ?`, [t.setting_id]);
         if (x && x.length > 0) {
             t.game_id = x[0].game_id;
             t.variant_id = x[0].variant_id;
@@ -519,7 +519,7 @@ export class TournamentService {
           const t = await this.service.query(
             `select main_time, additional_time, is_sandglass
              from   time_controls
-             where  id = $1`, [it.timecontrol_id]);
+             where  id = ?`, [it.timecontrol_id]);
           if (t && t.length > 0) {
              it.main_time = t[0].main_time;
              it.additional_time = t[0].additional_time;

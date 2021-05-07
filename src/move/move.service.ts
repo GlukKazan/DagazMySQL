@@ -28,7 +28,7 @@ export class MoveService {
                       ) as time_limit
                  from   game_moves a
                  inner  join game_sessions b on (b.id = a.session_id)
-                 where  a.session_id = $1 and a.turn_num = $2
+                 where  a.session_id = ? and a.turn_num = ?
                  order  by a.id`, [sid, turn]);
             let l: Move[] = x.map(x => {
                 let it = new Move();
@@ -87,7 +87,7 @@ export class MoveService {
         const x = await this.service.query(
             `select session_id
              from   user_games
-             where  id = $1`, [uid]);
+             where  id = ?`, [uid]);
         if (!x || x.length == 0) {
              return null;
         }
@@ -98,7 +98,7 @@ export class MoveService {
         const x = await this.service.query(
             `select user_id
              from   user_games
-             where  id = $1`, [uid]);
+             where  id = ?`, [uid]);
         if (!x || x.length == 0) {
              return null;
         }
@@ -110,7 +110,7 @@ export class MoveService {
             `select a.uid as uid, a.result_id as result_id, a.turn_number as turn_number
              from   game_alerts a
              inner  join user_games b on (b.id = a.uid)
-             where  a.session_id = $1`, [sid]);
+             where  a.session_id = ?`, [sid]);
         if (!x || x.length == 0) {
              return null;
         }
@@ -141,7 +141,7 @@ export class MoveService {
                     a.move_str, a.setup_str, a.note, a.time_delta, a.uid
              from   game_moves a
              inner  join game_sessions b on (b.id = a.session_id)
-             where  a.session_id = $1 and a.uid <> $2
+             where  a.session_id = ? and a.uid <> ?
              and    not a.setup_str is null 
              and    a.accepted is null
              order  by a.id`, [sid, uid]);
@@ -181,7 +181,7 @@ export class MoveService {
             `select a.time_limit, b.last_time
              from   user_games a
              inner  join game_sessions b on (b.id = a.session_id)
-             where  a.id = $1`, [uid]);
+             where  a.id = ?`, [uid]);
         if (!x || x.length == 0) {
              return null;
         }
@@ -199,7 +199,7 @@ export class MoveService {
         let x = await this.service.query(
             `select additional_time * 1000 as additional_time
              from   game_sessions
-             where  id = $1`, [sid]);
+             where  id = ?`, [sid]);
         if (!x || x.length == 0) {
              return null;
         }
@@ -217,7 +217,7 @@ export class MoveService {
                         a.move_str, a.setup_str, a.note, a.time_delta, a.uid
                  from   game_moves a
                  inner  join game_sessions b on (b.id = a.session_id and b.closed is null)
-                 where  a.session_id = $1
+                 where  a.session_id = ?
                  and    a.setup_str is null
                  order  by a.id desc`, [sess]);
             if (!x) {
@@ -250,7 +250,7 @@ export class MoveService {
 
     async getLastTime(id: number): Promise<number> {
         const x = await this.service.query(
-            `select last_time from game_sessions where id = $1`, [id]);
+            `select last_time from game_sessions where id = ?`, [id]);
         if (!x || x.length != 1) {
             return null;
         }
@@ -259,7 +259,7 @@ export class MoveService {
 
     async checkSession(id: number): Promise<boolean> {
         const x = await this.service.query(
-            `select id from game_sessions where id = $1`, [id]);
+            `select id from game_sessions where id = ?`, [id]);
         if (!x || x.length != 1) {
             return false;
         }
@@ -270,7 +270,7 @@ export class MoveService {
         const x = await this.service.query(
             `select last_user as uid
              from   game_sessions
-             where  id = $1`, [id]);
+             where  id = ?`, [id]);
         if (!x || x.length != 1) {
             return null;
         }
@@ -281,7 +281,7 @@ export class MoveService {
         const x = await this.service.query(
             `select coalesce(max(turn_num), 0) + 1 as turn_num
              from   game_moves 
-             where  session_id = $1`, [id]);
+             where  session_id = ?`, [id]);
         if (!x || x.length != 1) {
             return null;
         }
@@ -336,7 +336,7 @@ export class MoveService {
                 `select a.session_id, b.is_sandglass
                  from   user_games a
                  inner  join game_sessions b on (b.id = a.session_id)
-                 where  a.id = $1`, [x.uid]);
+                 where  a.id = ?`, [x.uid]);
             if (!t || t.length == 0) {
                  return null;
             }
@@ -370,7 +370,7 @@ export class MoveService {
                 const z = await this.service.query(
                     `select id, time_limit
                      from   user_games
-                     where  session_id = $1 and id <> $2`, [x.session_id, x.uid]);
+                     where  session_id = ? and id <> ?`, [x.session_id, x.uid]);
                 if (z && (z.length > 0) && z[0].time_limit) {
                     await this.service.createQueryBuilder("user_games")
                     .update(user_games)
