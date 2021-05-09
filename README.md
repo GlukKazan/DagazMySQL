@@ -8,5 +8,5 @@
 8. Run the following command (make sure there are no errors): <b>ts-node ./node_modules/typeorm/cli.js migration:run</b>
 9. Edit the <b>.env</b> file to set the listening port
 10. Re-enter the following command (from now on the service is ready to using): <b>npm start</b>
-11. Use proxy to change listening port or connect SSL certificates
+11. Use nginx-proxy to change listening port or connect SSL certificates
 12. Configure autostart of service
