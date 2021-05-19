@@ -63,7 +63,7 @@ export class JoinService {
 
     async getFilename(sess: number, player_num: number): Promise<string> {
         const x = await this.service.query(
-            `select concat(coalesce(c.filename, b.filename), coalesce(d.suffix, '')) as filename
+            `select distinct concat(coalesce(c.filename, b.filename), coalesce(d.suffix, '')) as filename
              from   game_sessions a
              inner  join games b on (b.id = a.game_id)
              left   join game_variants c on (c.id = a.variant_id)
@@ -93,6 +93,7 @@ export class JoinService {
             z.user_id = x.user_id;
             z.session_id = x.session_id;
             z.player_num = x.player_num;
+            z.time_limit = t;
             z.is_ai = x.is_ai ? 1 : 0;
             await r.insert(z);
             x.id = z.id;

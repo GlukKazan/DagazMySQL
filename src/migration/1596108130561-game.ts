@@ -14,7 +14,7 @@ export class game1596108130561 implements MigrationInterface {
         await queryRunner.query(`insert into game_variants(id, game_id, name, filename, players_total) values(6, 1, 'Fighting Checkers', 'fighting-checkers', 2)`);
 
         await queryRunner.query(`insert into game_styles(id, game_id, name, suffix, player_num) values(1, 1, 'Opposite', '-black', 2)`);
-        await queryRunner.query(`insert into game_styles(id, game_id, name, suffix, player_num) values(2, 1, 'Opposite', '-black', 2)`);
+        await queryRunner.query(`insert into game_styles(id, game_id, name, suffix, player_num) values(2, 2, 'Opposite', '-black', 2)`);
 
         await queryRunner.query(`insert into game_bots(id, game_id, variant_id, selector_value, player_num) values(1, 2, 2, null, null)`);
         await queryRunner.query(`insert into game_bots(id, game_id, variant_id, selector_value, player_num) values(2, 2, 5, null, 1)`);
