@@ -1011,6 +1011,7 @@ App.prototype.exec = function() {
       this.state = STATE.IDLE;
       return;
   }
+  if (!onceGameOver && uid) return;
   if (this.state == STATE.INIT) {
       authorize();
       if (auth === null) return;
