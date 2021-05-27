@@ -11,19 +11,6 @@ Dagaz.Model.checkVersion = function(design, name, value) {
 var checkGoals = Dagaz.Model.checkGoals;
 
 Dagaz.Model.checkGoals = function(design, board, player) {
-  var selector = Dagaz.Model.getSetupSelector();
-  if (selector == 2) {
-      var c = 0;
-      _.each(design.allPositions(), function(pos) {
-          var piece = board.getPiece(pos);
-          if (piece === null) return;
-          if (piece.player != 1) return;
-          c++;
-      });
-      if (c < 3) {
-          return 0;
-      }
-  }
   var king = design.getPieceType("King");
   board.generate(design);
   if (board.moves.length == 0) {
