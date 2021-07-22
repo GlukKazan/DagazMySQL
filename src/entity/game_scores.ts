@@ -2,8 +2,6 @@ import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryColumn } from "typ
 import { games } from "./games";
 import { game_results } from "./game_results";
 import { game_variants } from "./game_variants";
-import { rating_types } from "./rating_types";
-import { tournament_types } from "./tournament_types";
 
 @Entity()
 export class game_scores {
