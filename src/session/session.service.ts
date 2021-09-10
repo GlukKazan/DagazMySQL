@@ -53,7 +53,7 @@ export class SessionService {
                 return it;
             });
             return l;
-      } catch (error) {
+        } catch (error) {
               console.error(error);
               throw new InternalServerErrorException({
                   status: HttpStatus.BAD_REQUEST,

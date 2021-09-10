@@ -53,7 +53,4 @@ export class payment {
 
     @Column({nullable: true})
     expired: Date;
-
-    @Column({ type: "varchar", length: 100, nullable: true })
-    external_info: string;
 }

@@ -45,4 +45,7 @@ export class invoice {
 
     @Column({default: () => "now()", nullable: false})
     created: Date;
+
+    @Column({nullable: true})
+    closed: Date;
 }
