@@ -1,6 +1,6 @@
 import { Controller, UseGuards, Get, Res, HttpStatus, Req, Param, Post, Body } from '@nestjs/common';
 import { GameService } from './game.service';
-import { ApiSecurity, ApiOkResponse, ApiUnauthorizedResponse, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiBody } from '@nestjs/swagger';
+import { ApiSecurity, ApiOkResponse, ApiUnauthorizedResponse, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { Game } from '../interfaces/game.interface';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TokenGuard } from '../auth/token.guard';
@@ -20,6 +20,7 @@ export class GameController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get()
+    @ApiResponse({ type: [Game] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})
@@ -39,6 +40,7 @@ export class GameController {
     }
 
     @Get('openings/:id')
+    @ApiResponse({ type: [Opening] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
     async getOpenings(@Res() res, @Param('id') id): Promise<Opening[]> {
@@ -51,6 +53,7 @@ export class GameController {
     }
 
     @Get('map')
+    @ApiResponse({ type: [Game] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
     async getAll(@Res() res): Promise<Game[]> {
@@ -64,6 +67,7 @@ export class GameController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get(':id/variants')
+    @ApiResponse({ type: [Game] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})
@@ -83,6 +87,7 @@ export class GameController {
     }
 
     @Get('setups/:game')
+    @ApiResponse({ type: [Setup] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
     async getGameSetups(@Res() res, @Param('game') game): Promise<Setup[]> {
@@ -95,6 +100,7 @@ export class GameController {
     }
 
     @Get('setups/:game/:variant')
+    @ApiResponse({ type: [Setup] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
     async getVariantSetups(@Res() res, @Param('game') game, @Param('variant') variant): Promise<Setup[]> {
@@ -107,6 +113,7 @@ export class GameController {
     }
 
     @Get('styles')
+    @ApiResponse({ type: [Style] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
     async getAllStyles(@Res() res): Promise<Style[]> {
@@ -120,6 +127,7 @@ export class GameController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get(':id/styles')
+    @ApiResponse({ type: [Style] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -135,6 +143,7 @@ export class GameController {
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Post('preview')
     @ApiBody({ type: Preview })
+    @ApiResponse({ type: Preview })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})

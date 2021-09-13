@@ -1,7 +1,7 @@
 import { Controller, Get, Res, HttpStatus, UseGuards, Post, Body, Delete, Param, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from '../interfaces/user.interface';
-import { ApiOkResponse, ApiUnauthorizedResponse, ApiInternalServerErrorResponse, ApiForbiddenResponse, ApiSecurity, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiConflictResponse } from '@nestjs/swagger';
+import { ApiOkResponse, ApiUnauthorizedResponse, ApiInternalServerErrorResponse, ApiForbiddenResponse, ApiSecurity, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiConflictResponse, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -19,6 +19,7 @@ export class UsersController {
     @UseGuards(JwtAuthGuard, RolesGuard, TokenGuard)
     @Roles('admin')
     @Get()
+    @ApiResponse({ type: [User] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -34,6 +35,7 @@ export class UsersController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('current')
+    @ApiResponse({ type: User })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiForbiddenResponse({ description: 'Forbidden.'})
@@ -56,6 +58,7 @@ export class UsersController {
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Post('current')
     @ApiBody({ type: User })
+    @ApiResponse({ type: User })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiForbiddenResponse({ description: 'Forbidden.'})
@@ -77,6 +80,7 @@ export class UsersController {
 
     @Post()
     @ApiBody({ type: User })
+    @ApiResponse({ type: User })
     @ApiCreatedResponse({ description: 'Successfully.'})
     @ApiConflictResponse({ description: 'User already exists.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -96,6 +100,7 @@ export class UsersController {
     @UseGuards(JwtAuthGuard, RolesGuard, TokenGuard)
     @Roles('admin')
     @Delete(':id')
+    @ApiResponse({ type: User })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiForbiddenResponse({ description: 'Forbidden.'})

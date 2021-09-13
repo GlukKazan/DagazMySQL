@@ -1,5 +1,5 @@
-import { Controller, UseGuards, Get, Res, Param, HttpStatus, Post, Body, Req } from '@nestjs/common';
-import { ApiSecurity, ApiOkResponse, ApiUnauthorizedResponse, ApiInternalServerErrorResponse, ApiBody, ApiCreatedResponse, ApiForbiddenResponse, ApiNotFoundResponse } from '@nestjs/swagger';
+import { Controller, UseGuards, Get, Res, Param, HttpStatus, Post, Body } from '@nestjs/common';
+import { ApiSecurity, ApiOkResponse, ApiUnauthorizedResponse, ApiInternalServerErrorResponse, ApiBody, ApiCreatedResponse, ApiForbiddenResponse, ApiNotFoundResponse, ApiResponse } from '@nestjs/swagger';
 import { MoveService } from './move.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Move } from '../interfaces/move.interface';
@@ -17,6 +17,7 @@ export class MoveController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('all/:sid/:turn')
+    @ApiResponse({ type: [Move] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -32,6 +33,7 @@ export class MoveController {
     @UseGuards(JwtAuthGuard, RolesGuard, TokenGuard)
     @Roles('admin')
     @Get('unconfirmed/:id')
+    @ApiResponse({ type: [Move] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
@@ -52,6 +54,7 @@ export class MoveController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('confirmed/:uid')
+    @ApiResponse({ type: [Move] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
@@ -71,6 +74,7 @@ export class MoveController {
 
     @Post()
     @ApiBody({ type: [Move] })
+    @ApiResponse({ type: Move })
     @ApiCreatedResponse({ description: 'Successfully.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -90,6 +94,7 @@ export class MoveController {
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Post('accept')
     @ApiBody({ type: Move })
+    @ApiResponse({ type: Move })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
     async acept(@Res() res, @Body() x: Move): Promise<Move> {
@@ -104,6 +109,7 @@ export class MoveController {
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Post('alert')
     @ApiBody({ type: Move })
+    @ApiResponse({ type: Move })
     @ApiCreatedResponse({ description: 'Successfully.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
     async alert(@Res() res, @Body() x: Move): Promise<Move> {
@@ -119,6 +125,7 @@ export class MoveController {
     @Roles('admin')
     @Post('confirm')
     @ApiBody({ type: Move })
+    @ApiResponse({ type: Move })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})

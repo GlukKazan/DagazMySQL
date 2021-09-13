@@ -1,5 +1,5 @@
 import { Controller, UseGuards, Get, Res, Param, Req, HttpStatus, Post, Body } from '@nestjs/common';
-import { ApiSecurity, ApiOkResponse, ApiUnauthorizedResponse, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiBody, ApiCreatedResponse } from '@nestjs/swagger';
+import { ApiSecurity, ApiOkResponse, ApiUnauthorizedResponse, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiBody, ApiCreatedResponse, ApiResponse } from '@nestjs/swagger';
 import { ResultService } from './result.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Result } from '../interfaces/result.interface';
@@ -16,6 +16,7 @@ export class ResultController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get(':id')
+    @ApiResponse({ type: Result })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})
@@ -37,6 +38,7 @@ export class ResultController {
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Post()
     @ApiBody({ type: Result })
+    @ApiResponse({ type: Result })
     @ApiCreatedResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})

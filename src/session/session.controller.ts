@@ -1,5 +1,5 @@
 import { Controller, UseGuards, Get, Req, Res, HttpStatus, Post, Body, Param, Delete } from '@nestjs/common';
-import { ApiSecurity, ApiOkResponse, ApiUnauthorizedResponse, ApiInternalServerErrorResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiForbiddenResponse } from '@nestjs/swagger';
+import { ApiSecurity, ApiOkResponse, ApiUnauthorizedResponse, ApiInternalServerErrorResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiForbiddenResponse, ApiResponse } from '@nestjs/swagger';
 import { SessionService } from './session.service';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -18,6 +18,7 @@ export class SessionController {
     ) {}
 
     @Get('export/:sid')
+    @ApiResponse({ type: [Exp] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -36,6 +37,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('tournament/:tourn')
+    @ApiResponse({ type: [Sess] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -51,6 +53,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('tournament/:tourn/:user')
+    @ApiResponse({ type: [Sess] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -66,6 +69,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('waiting/:game/:variant')
+    @ApiResponse({ type: [Sess] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -81,6 +85,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('waiting/:game')
+    @ApiResponse({ type: [Sess] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -96,6 +101,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('waiting')
+    @ApiResponse({ type: [Sess] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -111,6 +117,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('all/:game/:variant')
+    @ApiResponse({ type: [Sess] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -126,6 +133,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('all/:game')
+    @ApiResponse({ type: [Sess] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -141,6 +149,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('all')
+    @ApiResponse({ type: [Sess] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -156,6 +165,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('current')
+    @ApiResponse({ type: [Sess] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -171,6 +181,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('active')
+    @ApiResponse({ type: [Sess] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -186,6 +197,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('archive')
+    @ApiResponse({ type: [Sess] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -201,6 +213,7 @@ export class SessionController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('my')
+    @ApiResponse({ type: [Sess] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -217,6 +230,7 @@ export class SessionController {
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Post()
     @ApiBody({ type: Sess })
+    @ApiResponse({ type: Sess })
     @ApiCreatedResponse({ description: 'Successfully.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
@@ -238,6 +252,7 @@ export class SessionController {
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Post('anonymous')
     @ApiBody({ type: Sess })
+    @ApiResponse({ type: Sess })
     @ApiCreatedResponse({ description: 'Successfully.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
@@ -259,6 +274,7 @@ export class SessionController {
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Post('recovery')
     @ApiBody({ type: Sess })
+    @ApiResponse({ type: Sess })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -278,6 +294,7 @@ export class SessionController {
 
     @Post('close')
     @ApiBody({ type: Sess })
+    @ApiResponse({ type: Sess })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiForbiddenResponse({ description: 'Forbidden.'})
@@ -298,6 +315,7 @@ export class SessionController {
     @UseGuards(JwtAuthGuard, RolesGuard, TokenGuard)
     @Roles('admin')
     @Delete(':id')
+    @ApiResponse({ type: Sess })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiForbiddenResponse({ description: 'Forbidden.'})

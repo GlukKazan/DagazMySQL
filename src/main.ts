@@ -12,6 +12,7 @@ async function bootstrap() {
   );
 
   const options = new DocumentBuilder()
+    .addBasicAuth()
     .setTitle('Dagaz Server')
     .setDescription('Dagaz Server API description')
     .setVersion('0.0.1')

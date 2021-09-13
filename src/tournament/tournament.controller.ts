@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpStatus, Param, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { ApiBody, ApiCreatedResponse, ApiForbiddenResponse, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiOkResponse, ApiSecurity, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ApiBody, ApiCreatedResponse, ApiForbiddenResponse, ApiInternalServerErrorResponse, ApiNotFoundResponse, ApiOkResponse, ApiResponse, ApiSecurity, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TokenGuard } from '../auth/token.guard';
 import { TournamentService } from './tournament.service';
@@ -20,6 +20,7 @@ export class TournamentController {
     ) {}
 
     @Get('info')
+    @ApiResponse({ type: [GameInfo] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -33,6 +34,7 @@ export class TournamentController {
     }
 
     @Get('time')
+    @ApiResponse({ type: [GameTime] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -47,6 +49,7 @@ export class TournamentController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('id/:id')
+    @ApiResponse({ type: Tourn })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})
@@ -67,6 +70,7 @@ export class TournamentController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('game/:g/:v')
+    @ApiResponse({ type: [Tourn] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})
@@ -87,6 +91,7 @@ export class TournamentController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('active')
+    @ApiResponse({ type: [Tourn] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -102,6 +107,7 @@ export class TournamentController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('closed')
+    @ApiResponse({ type: [Tourn] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -117,6 +123,7 @@ export class TournamentController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get('members/:id')
+    @ApiResponse({ type: [Member] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})
@@ -136,6 +143,7 @@ export class TournamentController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Delete('members/:id')
+    @ApiResponse({ type: Tourn })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -151,6 +159,7 @@ export class TournamentController {
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Post()
     @ApiBody({ type: Tourn })
+    @ApiResponse({ type: Tourn })
     @ApiCreatedResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -167,6 +176,7 @@ export class TournamentController {
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Post('join')
     @ApiBody({ type: Tourn })
+    @ApiResponse({ type: Tourn })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})
@@ -188,6 +198,7 @@ export class TournamentController {
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Post('close')
     @ApiBody({ type: Tourn })
+    @ApiResponse({ type: Tourn })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})
@@ -209,6 +220,7 @@ export class TournamentController {
     @UseGuards(JwtAuthGuard, RolesGuard, TokenGuard)
     @Roles('admin')
     @Delete(':id')
+    @ApiResponse({ type: Tourn })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiForbiddenResponse({ description: 'Forbidden.'})

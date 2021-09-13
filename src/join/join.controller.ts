@@ -1,5 +1,5 @@
 import { Controller, UseGuards, Get, Res, Param, HttpStatus, Post, Body, Req } from '@nestjs/common';
-import { ApiSecurity, ApiOkResponse, ApiUnauthorizedResponse, ApiInternalServerErrorResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse } from '@nestjs/swagger';
+import { ApiSecurity, ApiOkResponse, ApiUnauthorizedResponse, ApiInternalServerErrorResponse, ApiBody, ApiCreatedResponse, ApiNotFoundResponse, ApiResponse } from '@nestjs/swagger';
 import { JoinService } from './join.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Join } from '../interfaces/join.interface';
@@ -17,6 +17,7 @@ export class JoinController {
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Post()
     @ApiBody({ type: Join })
+    @ApiResponse({ type: Join })
     @ApiCreatedResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiNotFoundResponse({ description: 'Not Found.'})

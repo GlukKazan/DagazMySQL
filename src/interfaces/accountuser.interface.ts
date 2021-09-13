@@ -5,6 +5,9 @@ export class AccountUser {
     @ApiPropertyOptional()
     id: number;
 
+    @ApiPropertyOptional()
+    account_id: number;
+
     @ApiProperty()
     user_id: number;
 

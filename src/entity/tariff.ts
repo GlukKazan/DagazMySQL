@@ -11,6 +11,9 @@ export class tariff {
     @Column({ type: "varchar", length: 1000, nullable: true })
     description: string;
 
+    @Column({ default: 0, nullable: false  })
+    is_default: number;
+    
     @Column({default: () => "now()", nullable: false})
     created: Date;
 

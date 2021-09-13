@@ -1,5 +1,5 @@
 import { Controller, UseGuards, Request, Post, Get, Param, Res, Body, HttpStatus } from '@nestjs/common';
-import { ApiSecurity, ApiBody, ApiCreatedResponse, ApiUnauthorizedResponse, ApiOkResponse, ApiNotFoundResponse, ApiInternalServerErrorResponse } from '@nestjs/swagger';
+import { ApiSecurity, ApiBody, ApiCreatedResponse, ApiUnauthorizedResponse, ApiOkResponse, ApiNotFoundResponse, ApiInternalServerErrorResponse, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth/auth.service';
 import { LocalAuthGuard } from './auth/local-auth.guard';
 import { User } from './interfaces/user.interface';
@@ -44,6 +44,7 @@ export class AppController {
 
   @Post('api/auth/recovery')
   @ApiBody({ type: Token })
+  @ApiResponse({ type: Token })
   @ApiOkResponse({ description: 'Successfully.'})
   @ApiNotFoundResponse({ description: 'Not Found.'})
   @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})

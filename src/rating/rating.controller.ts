@@ -1,5 +1,5 @@
 import { Controller, Get, HttpStatus, Param, Req, Res, UseGuards } from '@nestjs/common';
-import { ApiInternalServerErrorResponse, ApiOkResponse, ApiSecurity, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ApiInternalServerErrorResponse, ApiOkResponse, ApiResponse, ApiSecurity, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { RatingService } from './rating.service';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -16,6 +16,7 @@ export class RatingController {
 
     @UseGuards(JwtAuthGuard, TokenGuard)
     @Get()
+    @ApiResponse({ type: [Rate] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
@@ -30,6 +31,7 @@ export class RatingController {
     }
 
     @Get('user/:id')
+    @ApiResponse({ type: [Rate] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
     async userRatings(@Res() res, @Param('id') id): Promise<Rate[]> {
@@ -42,6 +44,7 @@ export class RatingController {
     }
 
     @Get('game/:g/:v')
+    @ApiResponse({ type: [Rate] })
     @ApiOkResponse({ description: 'Successfully.'})
     @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
     async gameRatings(@Res() res, @Param('g') g, @Param('v') v): Promise<Rate[]> {

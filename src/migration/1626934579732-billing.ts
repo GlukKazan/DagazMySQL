@@ -2,9 +2,8 @@ import {MigrationInterface, QueryRunner} from "typeorm";
 
 export class billing1626934579732 implements MigrationInterface {
 
+    // TODO: Delete wrong Billing-record
     public async up(queryRunner: QueryRunner): Promise<any> {
-        await queryRunner.query(`insert into billing(closed) values(null)`);
-
         await queryRunner.query(`insert into scope(id, name) values(1, 'Free content')`);
         await queryRunner.query(`insert into scope(id, name) values(2, 'Tony Berard''s games')`);
         await queryRunner.query(`insert into scope(id, name) values(3, 'Valentin Chelnokov''s games')`);
@@ -29,7 +28,6 @@ export class billing1626934579732 implements MigrationInterface {
         await queryRunner.query(`delete from payment_type`);
         await queryRunner.query(`delete from service_type`);
         await queryRunner.query(`delete from scope`);
-        await queryRunner.query(`delete from billing`);
     }
 
 }
