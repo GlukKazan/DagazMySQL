@@ -1,10 +1,10 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
 import { scope } from "./scope";
 import { service_type } from "./service_type";
 
 @Entity()
 export class service {
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     id: number;
 
     @Index()
@@ -20,6 +20,9 @@ export class service {
     @ManyToOne(type => scope)
     @JoinColumn({ name: "scope_id" })
     scopes: scope;
+
+    @Column({ type: "numeric", nullable: true })
+    scale: number;
 
     @Column({ type: "varchar", length: 100, nullable: false })
     name: string;

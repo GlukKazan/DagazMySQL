@@ -181,6 +181,28 @@ export class AccountController {
     }
 
     @UseGuards(JwtAuthGuard, TokenGuard)
+    @Post('invoice')
+    @ApiBody({ type: Invoice })
+    @ApiResponse({ type: Invoice })
+    @ApiCreatedResponse({ description: 'Successfully.'})
+    @ApiNotFoundResponse({ description: 'Not Found.'})
+    @ApiUnauthorizedResponse({ description: 'Unauthorized.'})
+    @ApiInternalServerErrorResponse({ description: 'Internal Server error.'})
+    async addInvoice(@Req() request: Request, @Res() res, @Body() x: Invoice): Promise<Invoice> {
+        const auth: any = request.user;
+        try {
+            const r = await this.service.addInvoice(auth.id, x);
+            if (!r) {
+                return res.status(HttpStatus.NOT_FOUND).json();
+            } else {
+                return res.status(HttpStatus.CREATED).json(r);
+            }
+        } catch (e) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: e.message.error.toString(), stack: e.stack});
+        }
+    }
+
+    @UseGuards(JwtAuthGuard, TokenGuard)
     @Put('tariff')
     @ApiBody({ type: AccountUser })
     @ApiResponse({ type: AccountTariff })

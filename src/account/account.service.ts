@@ -3,7 +3,10 @@ import { getRepository, Repository } from 'typeorm';
 import { account } from '../entity/account';
 import { billing } from '../entity/billing';
 import { coupon } from '../entity/coupon';
+import { invoice } from '../entity/invoice';
 import { payment } from '../entity/payment';
+import { service } from '../entity/service';
+import { tariff_service } from '../entity/tariff_service';
 import { user_account } from '../entity/user_account';
 import { Account } from '../interfaces/account.interface';
 import { AccountTariff } from '../interfaces/accounttariff.interface';
@@ -19,6 +22,51 @@ export class AccountService {
         @Inject('ACC_REPOSITORY')
         private readonly service: Repository<account>
     ) {}  
+
+    async getBilling(): Promise<billing> {
+        const x = await this.service.query(
+            `select a.id, a.created
+             from   billing a
+             where  a.closed is null`);
+        if (!x || x.length == 0) return null;
+        let r = new billing();
+        r.id = x[0].id;
+        r.created = x[0].created;
+        return r;
+    }
+
+    async getPeriod(): Promise<Period> {
+        const x = await this.service.query(
+            `select DATE_SUB(CURDATE(), INTERVAL DAYOFMONTH(CURDATE())-1 DAY) as start,
+                    DATE_SUB(DATE_ADD(a.created, INTERVAL 32 DAY), INTERVAL DAYOFMONTH(DATE_ADD(a.created, INTERVAL 32 DAY))-1 DAY) as end`);
+        if (!x || x.length == 0) return null;
+        let r = new Period();
+        r.start = x[0].start;
+        r.end = x[0].end;
+        return r;
+    }
+
+    async getCurrentBilling(): Promise<billing> {
+        const p = await this.getPeriod();
+        let x = await this.getBilling();
+        if (!x || x.created != p.start) {
+            if (!x) {
+                await this.service.createQueryBuilder("billing")
+                .update(billing)
+                .set({ 
+                    closed: p.end
+                 })
+                .where("id = :id", {id: x.id})
+                .execute();
+            }
+            const r = getRepository(billing);
+            const y = new billing();
+            y.created = p.start;
+            await r.insert(y);
+            x = await this.getBilling();
+        }
+        return x;
+    }
 
     async getDefaultTariff(): Promise<number> {
         const x = await this.service.query(
@@ -50,19 +98,63 @@ export class AccountService {
         return it;
     }
 
+    async getDefaultServices(tariff_id: number): Promise<tariff_service[]> {
+        const x = await this.service.query(
+            `select a.id, a.tariff_id, a.service_id, a.price, a.created, b.type_id
+             from   tariff_service a
+             inner  join service b on (b.id = a.service_id)
+             where  a.tariff_id = ? and a.is_default = 1 and a.deleted is null`, [tariff_id]);
+        let l: tariff_service[] = x.map(x => {
+             let it = new tariff_service();
+             it.id = x.id;
+             it.tariff_id = x.tariff_id;
+             it.service_id = x.service_id;
+             it.price = (x.type_id == 1) ? x.price : 0;
+             it.created = x.created;
+             return it;
+        });
+        return l;
+    }
+
+    async createDefaultServices(bill_id: number, acc_id: number, tariff_id: number, balance: number): Promise<void> {
+        const s = await this.getDefaultServices(tariff_id);
+        for (let i = 0; i < s.length; i++) {
+            if (s[i].price != 0) {
+                balance -= s[i].price;
+                await this.service.createQueryBuilder("account")
+                .update(account)
+                .set({ 
+                    balance: balance
+                 })
+                .where("id = :id", {id: acc_id})
+                .execute();
+            }
+            const t = new invoice();
+            t.account_id = acc_id;
+            t.service_id = s[i].service_id;
+            t.billing_id = bill_id;
+            t.quantity = (s[i].price != 0) ? 1 : 0;
+            t.amount = s[i].price;
+            const p = getRepository(invoice);
+            await p.insert(t);
+        }
+    }
+
     async createAccount(user_id: number): Promise<Account> {
-        const a = getRepository(account);
+        const b = await this.getCurrentBilling();
+        if (!b) return null;
         const x = new account();
         x.tariff_id = await this.getDefaultTariff();
         if (!x.tariff_id) return null;
         x.balance = 0;
+        const a = getRepository(account);
         await a.insert(x);
-        const r = getRepository(user_account);
         const y = new user_account();
         y.account_id = x.id;
         y.user_id = user_id;
+        const r = getRepository(user_account);
         await r.insert(y);
-        // TODO: Add default serices
+        await this.createDefaultServices(b.id, y.account_id, x.tariff_id, x.balance);
         const z = await this.findAccount(user_id);
         return z;
     }
@@ -251,51 +343,6 @@ export class AccountService {
         return it;
     }
 
-    async getBilling(): Promise<billing> {
-        const x = await this.service.query(
-            `select a.id, a.created
-             from   billing a
-             where  a.closed is null`);
-        if (!x || x.length == 0) return null;
-        let r = new billing();
-        r.id = x[0].id;
-        r.created = x[0].created;
-        return r;
-    }
-
-    async getPeriod(): Promise<Period> {
-        const x = await this.service.query(
-            `select DATE_SUB(CURDATE(), INTERVAL DAYOFMONTH(CURDATE())-1 DAY) as start,
-                    DATE_SUB(DATE_ADD(a.created, INTERVAL 32 DAY), INTERVAL DAYOFMONTH(DATE_ADD(a.created, INTERVAL 32 DAY))-1 DAY) as end`);
-        if (!x || x.length == 0) return null;
-        let r = new Period();
-        r.start = x[0].start;
-        r.end = x[0].end;
-        return r;
-    }
-
-    async getCurrentBilling(): Promise<billing> {
-        const p = await this.getPeriod();
-        let x = await this.getBilling();
-        if (!x || x.created != p.start) {
-            if (!x) {
-                await this.service.createQueryBuilder("billing")
-                .update(billing)
-                .set({ 
-                    closed: p.end
-                 })
-                .where("id = :id", {id: x.id})
-                .execute();
-            }
-            const r = getRepository(billing);
-            const y = new billing();
-            y.created = p.start;
-            await r.insert(y);
-            x = await this.getBilling();
-        }
-        return x;
-    }
-
     async addCoupon(user_id: number, x: Payment): Promise<Payment> {
         try {
             const a = await this.findAccount(user_id);
@@ -368,19 +415,216 @@ export class AccountService {
         }
     }
 
+    async findAccountById(id: number): Promise<account> {
+        const x = await this.service.query(
+            `select a.id, a.tariff_id, a.balance, a.created, a.deleted
+             from   account a
+             where  a.id = ?`, [id]);
+        if (!x || x.length == 0) return null;
+        let it = new account();
+        it.id = x[0].id;
+        it.tariff_id = x[0].tariff_id;
+        it.balance = x[0].balance;
+        it.created = x[0].created;
+        it.deleted = x[0].deleted;
+        it.created = x[0].created;
+        return it;
+    }
+
+    async getCurrentInvoices(acc_id: number): Promise<invoice[]> {
+        const x = await this.service.query(
+            `select a.id, a.account_id, a.service_id, a.billing_id, a.discount_id, a.quantity, a.amount, a.created, a.changed
+             from   invoice a
+             where  a.account_id = ? and a.closed is null`, [acc_id]);
+        let l: invoice[] = x.map(x => {
+             let it = new invoice();
+             it.id = x.id;
+             it.account_id = x.account_id;
+             it.service_id = x.service_id;
+             it.billing_id = x.billing_id;
+             it.discount_id = x.discount_id;
+             it.quantity = x.quantity;
+             it.amount = x.amount;
+             it.created = x.created;
+             it.changed = x.changed;
+             return it;
+        });
+        return l;
+    }
+
     async setTariff(x: AccountTariff): Promise<AccountTariff> {
         try {
-            // TODO: Close Services
-            // TODO: Change Tariff
-            // TODO: Add default serices
-            return null;
-
+            const b = await this.getCurrentBilling();
+            if (!b) return null;
+            const a = await this.findAccountById(x.account_id);
+            if (!a) return null;
+            if (a.tariff_id == x.tariff_id) return x;
+            const v = await this.getCurrentInvoices(x.account_id);
+            for (let i = 0; i < v.length; i++) {
+                await this.service.createQueryBuilder("invoice")
+                .update(invoice)
+                .set({ 
+                    closed: new Date()
+                 })
+                .where("id = :id", {id: v[i].id})
+                .execute();
+            }
+            await this.service.createQueryBuilder("account")
+            .update(account)
+            .set({ 
+                tariff_id: x.tariff_id,
+                changed: new Date()
+             })
+            .where("id = :id", {id: x.account_id})
+            .execute();
+            await this.createDefaultServices(b.id, x.account_id, x.tariff_id, a.balance);
+            return x;
         } catch (error) {
               console.error(error);
               throw new InternalServerErrorException({
                   status: HttpStatus.BAD_REQUEST,
                   error: error
               });
+        }
+    }
+
+    async getServiceByType(acc_id: number, type_id: number, scope_id): Promise<service> {
+        const x = await this.service.query(
+            `select c.id, c.type_id, c.scope_id, c.scale, c.name, c.created
+             from   account a
+             inner  join tariff_service b on (b.tariff_id = a.tariff_id and b.deleted is null)
+             inner  join service c on (c.id = b.service_id and c.deleted is null)
+             where  a.id = ? and a.deleted is null
+             and    c.type_id = ? and c.scope_id = ?`, [acc_id, type_id, scope_id]);
+        if (!x || x.length == 0) return null;
+        let r = new service();
+        r.id = x[0].id;
+        r.type_id = x[0].type_id;
+        r.scope_id = x[0].scope_id;
+        r.scale = x[0].scale;
+        r.name = x[0].name;
+        r.description = x[0].description;
+        r.created = x[0].created;
+        return r;
+    }
+
+    async getTariffService(acc_id: number, service_id: number): Promise<tariff_service> {
+        const x = await this.service.query(
+            `select b.id, b.tariff_id, b.service_id, b.price, b.created
+             from   account a
+             inner  join tariff_service b on (b.tariff_id = a.tariff_id and b.service_id = ?)
+             where  a.id = ? and b.deleted is null`, [service_id, acc_id]);
+        if (!x || x.length == 0) return null;
+        let r = new tariff_service();
+        r.id = x[0].id;
+        r.tariff_id = x[0].tariff_id;
+        r.service_id = x[0].service_id;
+        r.price = x[0].price;
+        r.created = x[0].created;
+        return r;
+    }
+
+    async getInvoice(acc_id: number, service_id: number): Promise<invoice> {
+        const x = await this.service.query(
+            `select a.id, a.account_id, a.service_id, a.billing_id, a.discount_id, a.quantity, a.amount, a.created, a.changed
+             from   invoice a
+             where  a.service_id = ? and a.account_id = ? and a.closed ia null`, [service_id, acc_id]);
+        if (!x || x.length == 0) return null;
+        let r = new invoice();
+        r.id = x[0].id;
+        r.account_id = x[0].account_id;
+        r.service_id = x[0].service_id;
+        r.billing_id = x[0].billing_id;
+        r.discount_id = x[0].discount_id;
+        r.quantity = x[0].quantity;
+        r.amount = x[0].amount;
+        r.created = x[0].created;
+        r.changed = x[0].changed;
+        return r;
+    }
+
+    async getTimeDiff(t: Date): Promise<number> {
+        const x = await this.service.query(
+            `select TIME_TO_SEC(TIMEDIFF(now(), ?)) as v`, [t]);
+        return x[0].v;
+    }
+
+    async addInvoice(user_id: number, x: Invoice): Promise<Invoice> {
+        try {
+            const b = await this.getCurrentBilling();
+            if (!b) return null;
+            const a = await this.getAccount(user_id);
+            if (!a) return null;
+            const s = await this.getServiceByType(a.id, x.servicetype_id, x.scope_id);
+            if (!s) return null;
+            const t = await this.getTariffService(a.id, s.id);
+            if (!t) return null;
+            let v = await this.getInvoice(a.id, s.id);
+            if (v && v.billing_id != b.id) {
+                await this.service.createQueryBuilder("invoice")
+                .update(invoice)
+                .set({ 
+                    closed: new Date()
+                 })
+                .where("id = :id", {id: v.id})
+                .execute();
+                v = null;
+            }
+            x.amount = 0;
+            x.account_id = a.id;
+            // event
+            if (s.type_id == 1) {
+                x.amount = t.price;
+                x.amount = x.amount * x.count;
+            }
+            // periodic (not implemented)
+            if (s.type_id == 2) return null;
+            // time trecking (not implemented)
+            if (s.type_id == 3) return null;
+            // subscription
+            if (v && s.type_id == 4) {
+                x.count = await this.getTimeDiff(v.created);
+                var cnt = x.count;
+                if (s.scale) {
+                    cnt = x.count / s.scale;
+                }
+                x.amount = (t.price * cnt) - v.amount;
+            }
+            if (x.amount > a.balance) return null;
+            await this.service.createQueryBuilder("account")
+            .update(account)
+            .set({ 
+                balance: a.balance - x.amount
+             })
+            .where("id = :id", {id: a.id})
+            .execute();
+            if (!v) {
+                const v = new invoice();
+                v.account_id = a.id;
+                v.service_id = s.id;
+                v.billing_id = b.id;
+                v.quantity = x.count;
+                v.amount = x.amount;
+                const p = getRepository(invoice);
+                await p.insert(v);
+            } else {
+                await this.service.createQueryBuilder("invoice")
+                .update(invoice)
+                .set({ 
+                    quantity: v.quantity + x.count,
+                    amount: v.amount + x.amount,
+                    changed: new Date()
+                 })
+                .where("id = :id", {id: v.id})
+                .execute();
+            }
+            return x;
+        } catch (error) {
+            console.error(error);
+            throw new InternalServerErrorException({
+                status: HttpStatus.BAD_REQUEST,
+                error: error
+            });
         }
     }
 }

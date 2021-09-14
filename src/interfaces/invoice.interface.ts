@@ -5,11 +5,20 @@ export class Invoice {
     @ApiProperty()
     id: number;
 
-    @ApiProperty()
+    @ApiPropertyOptional()
+    scope_id: number;
+
+    @ApiPropertyOptional()
+    servicetype_id: number;
+
+    @ApiPropertyOptional()
     account_id: number;
 
-    @ApiProperty()
+    @ApiPropertyOptional()
     amount: number;
+
+    @ApiPropertyOptional()
+    count: number;
 
     @ApiProperty()
     service_id: number;

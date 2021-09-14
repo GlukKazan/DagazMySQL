@@ -17,13 +17,9 @@ export class billing1626934579732 implements MigrationInterface {
         await queryRunner.query(`insert into payment_type(id, name) values(2, 'coupon')`);
 
         await queryRunner.query(`insert into discount_type(id, name) values(1, 'promotion')`);
-
-        await queryRunner.query(`insert into limit_type(id, name) values(1, 'number of accounts')`);
-        await queryRunner.query(`insert into limit_type(id, name) values(2, 'number of connections')`);
     }
 
     public async down(queryRunner: QueryRunner): Promise<any> {
-        await queryRunner.query(`delete from limit_type`);
         await queryRunner.query(`delete from discount_type`);
         await queryRunner.query(`delete from payment_type`);
         await queryRunner.query(`delete from service_type`);

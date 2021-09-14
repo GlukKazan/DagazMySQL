@@ -21,4 +21,7 @@ export class account {
 
     @Column({nullable: true})
     deleted: Date;
+
+    @Column({nullable: true})
+    changed: Date;
 }

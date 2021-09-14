@@ -37,7 +37,7 @@ export class invoice {
     @JoinColumn({ name: "discount_id" })
     discounts: discount;
 
-    @Column({type: "numeric", nullable: false})
+    @Column({type: "bigint", nullable: false})
     quantity: number;
 
     @Column({type: "numeric", nullable: false})
@@ -48,4 +48,7 @@ export class invoice {
 
     @Column({nullable: true})
     closed: Date;
+
+    @Column({nullable: true})
+    changed: Date;
 }
