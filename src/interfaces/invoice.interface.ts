@@ -2,14 +2,14 @@ import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class Invoice {
 
-    @ApiProperty()
+    @ApiPropertyOptional()
     id: number;
 
     @ApiPropertyOptional()
-    scope_id: number;
+    session_id: number;
 
     @ApiPropertyOptional()
-    servicetype_id: number;
+    usagetype_id: number;
 
     @ApiPropertyOptional()
     account_id: number;

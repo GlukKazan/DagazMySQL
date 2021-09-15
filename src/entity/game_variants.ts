@@ -1,5 +1,6 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
 import { games } from "./games";
+import { scope } from "./scope";
 import { users } from "./users";
 
 @Entity()
@@ -13,6 +14,13 @@ export class game_variants {
     @ManyToOne(type => games)
     @JoinColumn({ name: "game_id" })
     game: games;
+
+    @Index()
+    @Column({ nullable: true })
+    scope_id: number;
+    @ManyToOne(type => scope)
+    @JoinColumn({ name: "scope_id" })
+    scopes: scope;
 
     @Column({ type: "varchar", length: 100 })
     name: string;

@@ -28,6 +28,7 @@ var player_num = null;
 var setup = null;
 var last_move = null;
 var sid = null;
+var bill = null;
 var turn = 1;
 var netstamp = null;
 var recovery_setup = null;
@@ -458,9 +459,55 @@ var authorize = function() {
   });
 }
 
+var billing = function() {
+  if (auth === null) return;
+  if (sid === null) return;
+  if (bill !== null) return;
+  inProgress = true;
+  $.ajax({
+     url: SERVICE + "account/invoice",
+     type: "POST",
+     data: {
+         session_id: sid,
+         usagetype_id: 1
+     },
+     dataType: "json",
+     beforeSend: function (xhr) {
+         xhr.setRequestHeader('Authorization', 'Bearer ' + auth);
+     },
+     success: function(data) {
+         bill = data;
+         console.log('Billing: Succeed');
+         inProgress = false;
+     },
+     error: function() {
+         Dagaz.Controller.app.state = STATE.STOP;
+         console.log('Billing: Error!');
+     },
+     statusCode: {
+        401: function() {
+             Dagaz.Controller.app.state = STATE.STOP;
+             console.log('Billing: Bad User!');
+             window.location = '/';
+        },
+        // TODO: Redirect to pay
+        404: function() {
+             Dagaz.Controller.app.state = STATE.STOP;
+             console.log('Billing: Not found!');
+             window.location = '/';
+        },
+        500: function() {
+             Dagaz.Controller.app.state = STATE.STOP;
+             console.log('Billing: Internal Error!');
+        }
+     }
+  });
+}
+
 var recovery = function(s) {
   if (auth === null) return;
   if (sid === null) return;
+  if (bill === null) return;
   if (setup !== null) return;
   if (uid !== null) return;
   inProgress = true;
@@ -1078,6 +1125,7 @@ App.prototype.exec = function() {
       if (!_.isUndefined(Dagaz.Controller.init)) {
           Dagaz.Controller.init(s, this.board.player);
       }
+      billing();
       recovery(s);
       if (setup && uid) {
           Dagaz.Model.setup(this.board, setup);

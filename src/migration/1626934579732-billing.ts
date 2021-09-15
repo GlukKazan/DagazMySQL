@@ -2,7 +2,6 @@ import {MigrationInterface, QueryRunner} from "typeorm";
 
 export class billing1626934579732 implements MigrationInterface {
 
-    // TODO: Delete wrong Billing-record
     public async up(queryRunner: QueryRunner): Promise<any> {
         await queryRunner.query(`insert into scope(id, name) values(1, 'Free content')`);
         await queryRunner.query(`insert into scope(id, name) values(2, 'Tony Berard''s games')`);

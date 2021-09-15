@@ -1,5 +1,6 @@
 import { Entity, Column, Index, ManyToOne, JoinColumn, PrimaryColumn } from "typeorm";
 import { realms } from "./realms";
+import { scope } from "./scope";
 import { users } from "./users";
 
 @Entity()
@@ -13,6 +14,13 @@ export class games {
     @ManyToOne(type => realms)
     @JoinColumn({ name: "realm_id" })
     realm: realms;
+
+    @Index()
+    @Column({ nullable: true })
+    scope_id: number;
+    @ManyToOne(type => scope)
+    @JoinColumn({ name: "scope_id" })
+    scopes: scope;
 
     @Column({ type: "varchar", length: 100, nullable: false })
     name: string;
