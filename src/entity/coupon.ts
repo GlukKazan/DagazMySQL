@@ -17,7 +17,7 @@ export class coupon {
     @Column({ type: "varchar", length: 100, nullable: false })
     code: string;
 
-    @Column({type: "numeric", nullable: false})
+    @Column({type: "numeric", precision: 10, scale: 2, nullable: false})
     amount: number;
 
     @Column({default: () => "now()", nullable: false})

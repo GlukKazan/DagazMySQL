@@ -37,7 +37,7 @@ export class discount {
     @JoinColumn({ name: "scope_id" })
     scopes: scope;
 
-    @Column({type: "numeric", nullable: false})
+    @Column({type: "numeric", precision: 10, scale: 2, nullable: false})
     percent: number;
 
     @Column({ type: "varchar", length: 100, nullable: false })

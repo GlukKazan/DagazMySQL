@@ -40,7 +40,7 @@ export class invoice {
     @Column({type: "bigint", nullable: false})
     quantity: number;
 
-    @Column({type: "numeric", nullable: false})
+    @Column({type: "numeric", precision: 10, scale: 2, nullable: false})
     amount: number;
 
     @Column({default: () => "now()", nullable: false})

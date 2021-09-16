@@ -45,7 +45,7 @@ export class payment {
     @JoinColumn({ name: "service_id" })
     services: service;
 
-    @Column({type: "numeric", nullable: false})
+    @Column({type: "numeric", precision: 10, scale: 2, nullable: false})
     amount: number;
 
     @Column({default: () => "now()", nullable: false})

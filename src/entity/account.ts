@@ -13,7 +13,7 @@ export class account {
     @JoinColumn({ name: "tariff_id" })
     tariffs: tariff;
 
-    @Column({type: "numeric", nullable: false})
+    @Column({type: "numeric", precision: 10, scale: 2, nullable: false})
     balance: number;
 
     @Column({default: () => "now()", nullable: false})

@@ -35,10 +35,10 @@ export class AccountService {
         return r;
     }
 
-    async getPeriod(): Promise<Period> {
+    async getPeriod(d: Date): Promise<Period> {
         const x = await this.service.query(
             `select DATE_SUB(CURDATE(), INTERVAL DAYOFMONTH(CURDATE())-1 DAY) as start,
-                    DATE_SUB(DATE_ADD(a.created, INTERVAL 32 DAY), INTERVAL DAYOFMONTH(DATE_ADD(a.created, INTERVAL 32 DAY))-1 DAY) as end`);
+                    DATE_SUB(DATE_ADD(?, INTERVAL 32 DAY), INTERVAL DAYOFMONTH(DATE_ADD(?, INTERVAL 32 DAY))-1 DAY) as end`, [d, d]);
         if (!x || x.length == 0) return null;
         let r = new Period();
         r.start = x[0].start;
@@ -47,10 +47,10 @@ export class AccountService {
     }
 
     async getCurrentBilling(): Promise<billing> {
-        const p = await this.getPeriod();
         let x = await this.getBilling();
-        if (!x || x.created != p.start) {
-            if (!x) {
+        const p = await this.getPeriod(x ? x.created : new Date());
+        if (!x || x.created < p.start) {
+            if (x) {
                 await this.service.createQueryBuilder("billing")
                 .update(billing)
                 .set({ 
@@ -133,8 +133,9 @@ export class AccountService {
             t.account_id = acc_id;
             t.service_id = s[i].service_id;
             t.billing_id = bill_id;
-            t.quantity = (s[i].price != 0) ? 1 : 0;
+            t.quantity = 1;
             t.amount = s[i].price;
+            t.closed = new Date();
             const p = getRepository(invoice);
             await p.insert(t);
         }
@@ -370,7 +371,7 @@ export class AccountService {
             await this.service.createQueryBuilder("account")
             .update(account)
             .set({ 
-                balance: a.balance + c.amount
+                balance: +a.balance + +c.amount
              })
             .where("id = :id", {id: x.account_id})
             .execute();
@@ -508,7 +509,7 @@ export class AccountService {
         const x = await this.service.query(
             `select a.id, a.account_id, a.service_id, a.billing_id, a.discount_id, a.quantity, a.amount, a.created, a.changed
              from   invoice a
-             where  a.service_id = ? and a.account_id = ? and a.closed ia null`, [service_id, acc_id]);
+             where  a.service_id = ? and a.account_id = ? and a.closed is null`, [service_id, acc_id]);
         if (!x || x.length == 0) return null;
         let r = new invoice();
         r.id = x[0].id;
@@ -576,7 +577,7 @@ export class AccountService {
             `select coalesce(a.scope_id, b.scope_id) as scope_id
              from   game_sessions s
              inner  join game_variants a on (a.id = s.variant_id)
-             inner  join games b on (b.id = game_id)
+             inner  join games b on (b.id = a.game_id)
              where  s.id = ?`, [session_id]);
         if (!x || x.length == 0) return null;
         return x[0].scope_id;
@@ -616,6 +617,7 @@ export class AccountService {
                     .execute();
                     v = null;
                 }
+                if (!x.count) x.count = 1;
                 x.amount = 0;
                 x.account_id = a.id;
                 // event
@@ -632,6 +634,7 @@ export class AccountService {
                     }
                     x.amount = (t.price * cnt) - v.amount;
                 }
+                if (x.amount < 0) continue;
                 if (x.amount > a.balance) return null;
                 await this.service.createQueryBuilder("account")
                 .update(account)
@@ -653,8 +656,8 @@ export class AccountService {
                     await this.service.createQueryBuilder("invoice")
                     .update(invoice)
                     .set({ 
-                        quantity: v.quantity + x.count,
-                        amount: v.amount + x.amount,
+                        quantity: +v.quantity + +x.count,
+                        amount: +v.amount + +x.amount,
                         changed: new Date()
                      })
                     .where("id = :id", {id: v.id})

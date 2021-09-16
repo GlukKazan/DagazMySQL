@@ -4,6 +4,7 @@ export class tariff1631626023466 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<any> {
         await queryRunner.query(`insert into tariff(id, name, is_default) values(1, 'Default', 1)`);
+        await queryRunner.query(`insert into tariff(id, name, is_default) values(2, 'Free', 0)`);
 
         await queryRunner.query(`insert into account_limit(tariff_id, max_quantity) values(1, 2)`);
 

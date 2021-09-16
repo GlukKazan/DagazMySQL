@@ -12,11 +12,12 @@ import { TournamentModule } from './tournament/tournament.module';
 import { RatingModule } from './rating/rating.module';
 import { ConfigModule } from '@nestjs/config';
 import { AccountModule } from './account/account.module';
+import { CouponModule } from './coupon/coupon.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
     isGlobal: true
-  }),DatabaseModule, UsersModule, AuthModule, SessionModule, JoinModule, MoveModule, ResultModule, GameModule, TournamentModule, RatingModule, AccountModule],
+  }),DatabaseModule, UsersModule, AuthModule, SessionModule, JoinModule, MoveModule, ResultModule, GameModule, TournamentModule, RatingModule, AccountModule, CouponModule],
   controllers: [AppController]
 })
 export class AppModule {}
