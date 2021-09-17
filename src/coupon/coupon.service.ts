@@ -2,6 +2,7 @@ import { HttpStatus, Inject, Injectable, InternalServerErrorException } from '@n
 import { getRepository, Repository } from 'typeorm';
 import { coupon } from '../entity/coupon';
 import { Coupon } from '../interfaces/coupon.interface';
+import { Payment } from '../interfaces/payment.interface';
 
 @Injectable()
 export class CouponService {
@@ -10,6 +11,33 @@ export class CouponService {
         @Inject('COUP_REPOSITORY')
         private readonly service: Repository<coupon>
     ) {}  
+
+    async getPayments(user_id: number): Promise<Payment[]> {
+        try {
+            const x = await this.service.query(
+                `select c.id, c.code, c.amount, c.activated
+                 from   user_account a
+                 inner  join payment b on (b.account_id = a.account_id)
+                 inner  join coupon c on (c.payment_id = b.id)
+                 where  a.user_id = ?
+                 order  by c.activated`, [user_id]);
+            let l: Payment[] = x.map(x => {
+                let it = new Payment();
+                it.id = x.id;
+                it.coupon = x.code;
+                it.amount = x.amount;
+                it.created = x.activated;
+                return it;
+            });
+            return l;
+        } catch (error) {
+            console.error(error);
+            throw new InternalServerErrorException({
+                status: HttpStatus.BAD_REQUEST,
+                error: error
+            });
+        }
+    }
 
     async couponFound(code: string): Promise<boolean> {
         const x = await this.service.query(
