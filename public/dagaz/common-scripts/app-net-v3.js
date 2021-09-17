@@ -303,11 +303,10 @@ var billing = function() {
              console.log('Billing: Bad User!');
              window.location = '/';
         },
-        // TODO: Redirect to pay
         404: function() {
              Dagaz.Controller.app.state = STATE.STOP;
              console.log('Billing: Not found!');
-             window.location = '/';
+             window.location = '/payments';
         },
         500: function() {
              Dagaz.Controller.app.state = STATE.STOP;
