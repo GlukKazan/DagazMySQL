@@ -10,3 +10,4 @@
 10. Re-enter the following command (from now on the service is ready to using): <b>npm start</b>
 11. Use nginx-proxy to change listening port or connect SSL certificates
 12. Configure autostart of service
+13. https://boardgamesandcards.com/
